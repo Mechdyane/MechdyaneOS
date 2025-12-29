@@ -111,6 +111,15 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('mechdyane_api_enabled', String(isApiEnabled));
   }, [isApiEnabled]);
+  useEffect(() => {
+    localStorage.setItem('mechdyane_wallpaper', wallpaper);
+  }, [wallpaper]);
+  useEffect(() => {
+    localStorage.setItem('mechdyane_focus', String(focusMode));
+  }, [focusMode]);
+  useEffect(() => {
+    localStorage.setItem('mechdyane_pulse', String(synapticPulse));
+  }, [synapticPulse]);
 
   // Update global CSS variables for animations
   useEffect(() => {
@@ -303,8 +312,17 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`h-screen w-screen bg-[#020617] text-slate-100 flex flex-row font-sans overflow-hidden transition-all duration-1000 ${focusMode ? 'grayscale-[0.4] brightness-[0.8]' : ''} ${!isApiEnabled ? 'saturate-[0.8] contrast-[1.05]' : ''}`}>
-      <div className={`fixed inset-0 os-grid neural-pulse-bg pointer-events-none transition-opacity duration-1000 ${wallpaper === 'os-grid' ? 'opacity-10' : 'opacity-5'}`}></div>
+    <div className={`h-screen w-screen bg-[#020617] text-slate-100 flex flex-row font-sans overflow-hidden transition-all duration-1000 ${focusMode ? 'grayscale-[0.6] brightness-[0.7] sepia-[0.1]' : ''} ${!isApiEnabled ? 'saturate-[0.8] contrast-[1.05]' : ''}`}>
+      {/* Background Layers */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        {wallpaper !== 'os-grid' && (
+          <div 
+            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 opacity-20"
+            style={{ backgroundImage: `url(${wallpaper})`, filter: focusMode ? 'blur(10px) brightness(0.5)' : 'none' }}
+          />
+        )}
+        <div className={`absolute inset-0 os-grid neural-pulse-bg transition-opacity duration-1000 ${wallpaper === 'os-grid' ? 'opacity-20' : 'opacity-10'}`}></div>
+      </div>
 
       <Sidebar onLaunch={openApp} user={user} activeApp={activeApp} />
 

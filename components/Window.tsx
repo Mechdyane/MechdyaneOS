@@ -106,14 +106,21 @@ const Window: React.FC<WindowProps> = ({
     };
   }, [isDragging, resizing, handleMouseMove, handleMouseUp]);
 
-  const baseStyle: React.CSSProperties = isMobile 
+  // Specific "Zoom" effect styles for mobile vs desktop
+  const windowBaseStyle: React.CSSProperties = isMobile 
     ? { 
         width: '100vw', 
         height: 'calc(100% - 48px)', 
         left: 0, 
         top: 0, 
-        borderRadius: 0,
-        border: 'none'
+        borderRadius: isMinimized ? '40px' : '0',
+        border: 'none',
+        transform: isMinimized 
+            ? 'scale(0.1) translateY(800px)' // Aggressive zoom out to taskbar
+            : 'scale(1) translateY(0)',
+        opacity: isMinimized ? 0 : 1,
+        filter: isMinimized ? 'blur(20px)' : 'blur(0px)',
+        transformOrigin: 'center bottom',
       }
     : isMaximized 
     ? {
@@ -122,7 +129,9 @@ const Window: React.FC<WindowProps> = ({
         left: 0,
         top: 0,
         borderRadius: 0,
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+        transform: 'scale(1)',
+        opacity: 1,
+        zIndex: zIndex + 1000 
       }
     : { 
         width: `${size.width}px`, 
@@ -130,28 +139,34 @@ const Window: React.FC<WindowProps> = ({
         left: `${pos.x}px`, 
         top: `${pos.y}px`, 
         borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.1)'
+        border: '1px solid rgba(255,255,255,0.1)',
+        transform: isMinimized ? 'scale(0.9) translateY(40px)' : 'scale(1) translateY(0)',
+        opacity: isMinimized ? 0 : 1,
+        transformOrigin: 'center center',
       };
 
   const windowStyle: React.CSSProperties = {
-    ...baseStyle,
+    ...windowBaseStyle,
     position: 'absolute',
-    display: isMinimized ? 'none' : 'flex',
+    display: 'flex', 
     flexDirection: 'column',
     zIndex,
-    overflow: 'visible',
-    transition: isDragging || resizing ? 'none' : 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden',
+    pointerEvents: isMinimized ? 'none' : 'auto',
+    transition: isDragging || resizing 
+        ? 'none' 
+        : 'all 0.5s cubic-bezier(0.19, 1, 0.22, 1)', // Smooth cinematic curve
   };
 
   return (
     <div 
-      className={`glass shadow-2xl transition-shadow duration-300 ${
+      className={`glass shadow-2xl animate-window-zoom ${
         isActive ? 'ring-1 ring-blue-500/50 shadow-blue-500/30' : ''
       }`}
       style={windowStyle}
       onMouseDown={onFocus}
     >
-      {/* Resizers */}
+      {/* Resizers (Disabled on mobile) */}
       {!isMobile && !isMaximized && (
         <>
           <div className="absolute inset-x-0 -top-1 h-2 cursor-ns-resize z-50" onMouseDown={(e) => handleResizeStart(e, 'n')} />
@@ -177,7 +192,7 @@ const Window: React.FC<WindowProps> = ({
           <div className={`w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20`}>
             <i className={`fas ${icon} text-blue-400 text-xs`}></i>
           </div>
-          <span className={`font-orbitron font-black uppercase tracking-widest text-slate-300 truncate max-w-[150px] md:max-w-none text-[10px]`}>
+          <span className={`font-orbitron font-black uppercase tracking-widest text-slate-300 truncate max-w-[120px] md:max-w-none text-[9px]`}>
             {title}
           </span>
         </div>
@@ -191,13 +206,15 @@ const Window: React.FC<WindowProps> = ({
             <i className="fas fa-minus text-[10px]"></i>
           </button>
           
-          <button 
-            onClick={(e) => { e.stopPropagation(); onMaximize(); }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-slate-400"
-            title={isMaximized ? "Restore" : "Maximize"}
-          >
-            <i className={`${isMaximized ? 'fas fa-compress' : 'far fa-square'} text-[10px]`}></i>
-          </button>
+          {!isMobile && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onMaximize(); }}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-slate-400"
+              title={isMaximized ? "Restore" : "Maximize"}
+            >
+              <i className={`${isMaximized ? 'fas fa-compress' : 'far fa-square'} text-[10px]`}></i>
+            </button>
+          )}
           
           <button 
             onClick={(e) => { e.stopPropagation(); onClose(); }}
@@ -210,7 +227,7 @@ const Window: React.FC<WindowProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-auto bg-[#020617]/40 scroll-smooth custom-scrollbar relative">
+      <div className="flex-1 overflow-auto bg-[#020617]/60 scroll-smooth custom-scrollbar relative">
         {children}
       </div>
     </div>

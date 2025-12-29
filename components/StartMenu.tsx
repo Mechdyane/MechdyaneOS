@@ -26,7 +26,7 @@ const StartMenu: React.FC<StartMenuProps> = ({ installedAppIds, onClose, onLaunc
 
   return (
     <div 
-      className="absolute bottom-14 left-1/2 -translate-x-1/2 w-[calc(100vw-24px)] md:w-[500px] glass rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.8)] z-[10000] animate-in slide-in-from-bottom-12 duration-300 max-h-[80vh] flex flex-col"
+      className="absolute bottom-14 left-1/2 -translate-x-1/2 w-[calc(100vw-24px)] md:w-[500px] glass rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.8)] z-[10000] animate-mech-start animate-glow-cycle max-h-[80vh] flex flex-col"
       onMouseLeave={() => { if(window.innerWidth >= 768) onClose(); }}
     >
       <div className="p-5 md:p-6 overflow-y-auto custom-scrollbar flex-1">
