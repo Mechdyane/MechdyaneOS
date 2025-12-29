@@ -22,19 +22,26 @@ const Sidebar: React.FC<SidebarProps> = ({ onLaunch, user, activeApp, isHidden =
   return (
     <aside 
       className={`
-        hidden md:flex w-64 glass h-screen sticky top-0 flex-col items-center py-6 border-r border-white/5 z-[10001] shrink-0 transition-all duration-700 ease-in-out
-        ${isHidden ? '-ml-64 opacity-0 pointer-events-none' : 'ml-0 opacity-100'}
+        hidden md:flex w-64 glass h-screen sticky top-0 flex-col items-center py-6 border-r border-white/5 z-[10001] shrink-0 transition-all duration-700 ease-in-out transform
+        ${isHidden ? '-translate-x-full opacity-0 pointer-events-none -ml-64' : 'translate-x-0 opacity-100 ml-0'}
       `}
     >
-      <div className="flex items-center gap-3 mb-10 px-4 cursor-pointer" onClick={() => onLaunch('os-helper')}>
-        <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center glow-blue shadow-lg shadow-blue-500/20">
-          <i className="fas fa-microchip text-xl text-white"></i>
+      <div className="flex items-center gap-3 mb-10 px-4 cursor-pointer group/logo" onClick={() => onLaunch('os-helper')}>
+        <div className={`
+          w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all duration-1000
+          ${isHidden 
+            ? 'bg-gradient-to-tr from-red-600 to-amber-600 shadow-red-500/20' 
+            : 'bg-gradient-to-tr from-blue-600 to-indigo-600 glow-blue shadow-blue-500/20'}
+        `}>
+          <i className={`fas fa-microchip text-xl text-white transition-transform group-hover/logo:rotate-180 duration-700`}></i>
         </div>
         <div className="hidden md:block">
             <span className="font-orbitron text-sm font-black text-white tracking-widest block leading-none">
             MECHDYANE
             </span>
-            <span className="text-[7px] text-blue-400 font-black uppercase tracking-[0.3em] mt-1 block">OS v9.1 Core</span>
+            <span className={`text-[7px] font-black uppercase tracking-[0.3em] mt-1 block transition-colors duration-1000 ${isHidden ? 'text-red-400' : 'text-blue-400'}`}>
+              {isHidden ? 'Yield Status: Idle' : 'OS v9.1 Core'}
+            </span>
         </div>
       </div>
 

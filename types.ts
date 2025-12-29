@@ -127,10 +127,25 @@ export interface MindMapNode {
   x: number;
   y: number;
   color?: string;
+  shape?: 'rectangle' | 'ellipse';
+  textAlign?: 'left' | 'center' | 'right';
 }
 
 export interface MindMapEdge {
   id: string;
   fromId: string;
   toId: string;
+}
+
+export interface RewardToast {
+  id: string;
+  amount: string;
+  type: 'xp' | 'credits' | 'error';
+  timestamp: number;
+}
+
+export interface SystemError {
+  code: string;
+  message: string;
+  suggestion: string;
 }

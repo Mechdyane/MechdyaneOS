@@ -12,6 +12,7 @@ interface DashboardProps {
   onRestartQuest?: (id: string) => void;
   onMinimize?: () => void;
   isApiEnabled?: boolean;
+  yielded?: boolean;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -32,7 +33,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ 
-  user, modules, inventory, onLaunchQuest, onEnroll, onRestartQuest, onMinimize, isApiEnabled = true 
+  user, modules, inventory, onLaunchQuest, onEnroll, onRestartQuest, onMinimize, isApiEnabled = true, yielded = false
 }) => {
   const [recommendation, setRecommendation] = useState<string>("Initializing Neural Suggester...");
   const [isSyncingRec, setIsSyncingRec] = useState(false);
@@ -113,7 +114,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   }, [modules, activeFilter, searchQuery]);
 
   return (
-    <div className="p-6 md:p-12 space-y-10 animate-in fade-in duration-700 h-full overflow-y-auto bg-[#020617]/40 custom-scrollbar pb-32">
+    <div className={`p-6 md:p-12 space-y-10 animate-in fade-in duration-700 h-full overflow-y-auto bg-[#020617]/40 custom-scrollbar pb-32 transition-opacity duration-700 ${yielded ? 'opacity-30 grayscale-[0.5] pointer-events-none' : 'opacity-100'}`}>
       
       {/* HEADER SECTION */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative group/header">
@@ -131,8 +132,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter font-orbitron leading-none uppercase">
               Operational Hub: <span className={isApiEnabled ? "text-blue-500" : "text-amber-500"}>{user.name}</span>
             </h1>
-            <p className="text-slate-500 font-bold mt-2 text-[10px] uppercase tracking-[0.3em]">
-              Neural Link: <span className={isApiEnabled ? "text-emerald-500" : "text-amber-600 animate-pulse"}>{isApiEnabled ? 'Stable' : 'Restricted (Static)'}</span> • Sync Rate: {suggestedModule ? 'Optimized' : 'Scanning'}
+            <p className="text-slate-500 font-bold mt-2 text-[10px] uppercase tracking-[0.3em] flex items-center gap-3">
+              Neural Link: <span className={isApiEnabled ? "text-emerald-500" : "text-amber-600 animate-pulse"}>{isApiEnabled ? 'Stable' : 'Restricted (Static)'}</span>
+              <span className="text-slate-700">|</span>
+              Workspace Status: <span className={yielded ? "text-amber-500" : "text-blue-400"}>{yielded ? 'YIELDED (IDLE)' : 'LINK ACTIVE'}</span>
             </p>
           </div>
         </div>
@@ -142,7 +145,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             <button 
               onClick={onMinimize}
               className="px-6 py-3 bg-white/5 hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 border border-white/5 hover:border-blue-500/30 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 active:scale-95 group shadow-2xl"
-              title="Yield Terminal to Clear Workspace"
+              title="Yield Node to Focus on Active Tasks"
             >
               <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-blue-600/40 transition-colors">
                 <i className="fas fa-down-left-and-up-right-to-center text-[10px] group-hover:scale-110 transition-transform"></i>

@@ -67,13 +67,15 @@ const Taskbar: React.FC<TaskbarProps> = ({
       <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1 pr-4">
         {windows.map(win => {
           const isActive = activeApp === win.id;
+          const isMinimized = win.isMinimized;
+          
           return (
             <div key={win.id} className={`relative group/item shrink-0 transition-all duration-300 ${isActive ? 'z-50' : 'z-10'}`}>
               <button
                 onClick={() => onAppClick(win.id)}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
-                  if (isActive) onMinimizeApp(win.id);
+                  onMinimizeApp(win.id);
                 }}
                 style={{ 
                   transform: isActive ? 'translateY(-6px) scale(1.05)' : 'none' 
@@ -83,25 +85,27 @@ const Taskbar: React.FC<TaskbarProps> = ({
                   ${isActive 
                     ? `bg-white/15 border border-white/20 ring-1 ring-white/20 ${isApiEnabled ? 'shadow-[0_10px_20px_rgba(59,130,246,0.3)]' : 'shadow-[0_10px_20px_rgba(245,158,11,0.3)]'}` 
                     : 'hover:bg-white/5 border border-transparent'}
+                  ${isMinimized ? 'opacity-40 grayscale-[0.5]' : ''}
                 `}
+                title={isMinimized ? `Restore ${win.title}` : (isActive ? `Minimize ${win.title}` : `Focus ${win.title}`)}
               >
                 <i className={`
                   fas ${win.icon} transition-all duration-500
                   ${isActive 
                     ? (isApiEnabled ? 'text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,1)] scale-110' : 'text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,1)] scale-110') 
-                    : 'text-slate-500 group-hover:text-slate-300'}
+                    : (isMinimized ? 'text-slate-600' : 'text-slate-500 group-hover:text-slate-300')}
                 `}></i>
                 
                 <span className={`
                   text-[10px] font-black uppercase tracking-widest hidden md:block transition-all duration-500
-                  ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}
+                  ${isActive ? 'text-white' : (isMinimized ? 'text-slate-600' : 'text-slate-500 group-hover:text-slate-300')}
                 `}>
                   {win.title}
                 </span>
 
                 <div className={`
                   absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 rounded-full transition-all duration-700
-                  ${isActive ? `w-4 md:w-8 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
+                  ${isActive ? `w-4 md:w-8 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,1)]'}` : (isMinimized ? 'w-1.5 bg-slate-700' : 'w-1 bg-slate-800 opacity-20')}
                 `}></div>
               </button>
 
