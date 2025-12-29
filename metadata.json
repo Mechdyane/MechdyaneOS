@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Mechdyane OS",
+  "description": "A futuristic, gamified operating system for human growth, managing learning engagement through mechanics, dynamics, and emotions.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
