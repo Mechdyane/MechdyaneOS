@@ -6,13 +6,23 @@ interface TaskbarProps {
   windows: any[];
   activeApp: AppId | null;
   onAppClick: (id: AppId) => void;
+  onCloseApp: (id: AppId) => void;
   onStartClick: () => void;
   onControlClick: () => void;
   onCalendarClick: () => void;
   isApiEnabled?: boolean;
 }
 
-const Taskbar: React.FC<TaskbarProps> = ({ windows, activeApp, onAppClick, onStartClick, onControlClick, onCalendarClick, isApiEnabled = true }) => {
+const Taskbar: React.FC<TaskbarProps> = ({ 
+  windows, 
+  activeApp, 
+  onAppClick, 
+  onCloseApp,
+  onStartClick, 
+  onControlClick, 
+  onCalendarClick, 
+  isApiEnabled = true 
+}) => {
   const [time, setTime] = useState(new Date());
   const [isSpinning, setIsSpinning] = useState(false);
 
@@ -48,32 +58,49 @@ const Taskbar: React.FC<TaskbarProps> = ({ windows, activeApp, onAppClick, onSta
         {windows.map(win => {
           const isActive = activeApp === win.id;
           return (
-            <button
-              key={win.id}
-              onClick={() => onAppClick(win.id)}
-              className={`
-                relative flex items-center gap-3 px-4 h-10 rounded-xl transition-all duration-300 shrink-0 group active:scale-95
-                ${isActive ? 'bg-white/10 border border-white/10 shadow-inner' : 'hover:bg-white/5'}
-              `}
-            >
-              <i className={`
-                fas ${win.icon} transition-all duration-300
-                ${isActive ? (isApiEnabled ? 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] scale-110' : 'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] scale-110') : 'text-slate-500 group-hover:text-slate-300'}
-              `}></i>
-              
-              <span className={`
-                text-[10px] font-black uppercase tracking-widest hidden md:block transition-all duration-300
-                ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}
-              `}>
-                {win.title}
-              </span>
+            <div key={win.id} className="relative group/item shrink-0">
+              <button
+                onClick={() => onAppClick(win.id)}
+                className={`
+                  relative flex items-center gap-3 pl-4 pr-10 h-10 rounded-xl transition-all duration-300 group active:scale-95
+                  ${isActive ? 'bg-white/10 border border-white/10 shadow-inner' : 'hover:bg-white/5'}
+                `}
+              >
+                <i className={`
+                  fas ${win.icon} transition-all duration-300
+                  ${isActive ? (isApiEnabled ? 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] scale-110' : 'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)] scale-110') : 'text-slate-500 group-hover:text-slate-300'}
+                `}></i>
+                
+                <span className={`
+                  text-[10px] font-black uppercase tracking-widest hidden md:block transition-all duration-300
+                  ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}
+                `}>
+                  {win.title}
+                </span>
 
-              {/* Active Indicator Line */}
-              <div className={`
-                absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full transition-all duration-500
-                ${isActive ? `w-4 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
-              `}></div>
-            </button>
+                {/* Active Indicator Line */}
+                <div className={`
+                  absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full transition-all duration-500
+                  ${isActive ? `w-4 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
+                `}></div>
+              </button>
+
+              {/* Close Button on Taskbar Item */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCloseApp(win.id);
+                }}
+                className={`
+                  absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-lg flex items-center justify-center 
+                  transition-all duration-200 opacity-0 group-hover/item:opacity-100 hover:bg-red-500/80 text-slate-400 hover:text-white
+                  ${isActive ? 'opacity-40' : ''}
+                `}
+                title="Terminate Node"
+              >
+                <i className="fas fa-times text-[10px]"></i>
+              </button>
+            </div>
           );
         })}
       </div>

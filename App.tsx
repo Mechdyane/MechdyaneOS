@@ -387,7 +387,16 @@ const App: React.FC = () => {
           )}
         </main>
 
-        <Taskbar isApiEnabled={isApiEnabled} windows={(Object.values(windows) as WindowState[]).filter(w => w.isOpen)} activeApp={activeApp} onAppClick={openApp} onStartClick={() => setIsStartOpen(!isStartOpen)} onControlClick={() => openApp('control-panel')} onCalendarClick={() => openApp('calendar')} />
+        <Taskbar 
+          isApiEnabled={isApiEnabled} 
+          windows={(Object.values(windows) as WindowState[]).filter(w => w.isOpen)} 
+          activeApp={activeApp} 
+          onAppClick={openApp} 
+          onCloseApp={closeApp}
+          onStartClick={() => setIsStartOpen(!isStartOpen)} 
+          onControlClick={() => openApp('control-panel')} 
+          onCalendarClick={() => openApp('calendar')} 
+        />
         {isStartOpen && <StartMenu installedAppIds={installedAppIds} onClose={() => setIsStartOpen(false)} onLaunch={openApp} />}
         <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onLaunch={openApp} />
       </div>
@@ -552,6 +561,7 @@ const LearningEngineOverlay: React.FC<{
                   <i className={`fas ${isApiEnabled ? 'fa-microchip' : 'fa-box-archive'} text-[200px]`}></i>
                 </div>
                 <div className="prose prose-invert max-w-none text-base md:text-lg text-slate-300 leading-relaxed font-medium markdown-content">
+                   {/* Simplified markdown rendering */}
                    {milestone?.content?.split('\n').map((line: string, idx: number) => {
                      if (line.startsWith('###')) return <h3 key={idx} className="text-xl font-bold text-white mt-6 mb-3 font-orbitron">{line.replace('###', '')}</h3>;
                      if (line.startsWith('*')) return <li key={idx} className="ml-4 list-disc text-slate-400 mb-1">{line.replace('*', '')}</li>;
@@ -640,7 +650,7 @@ const LearningEngineOverlay: React.FC<{
                     <p className="text-2xl md:text-3xl font-black text-blue-400 font-orbitron">+{Math.round(100 * xpMultiplier)}</p>
                     <p className="text-[7px] md:text-[8px] font-bold text-blue-500/60 uppercase">Base 100 + Buff Bonus</p>
                   </div>
-                  <div className={`bg-emerald-600/10 border border-emerald-500/20 px-6 py-4 md:px-8 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center gap-2 group transition-all ${isApiEnabled ? 'hover:border-emerald-500/50' : 'grayscale opacity-50'}`}>
+                  <div className={`bg-emerald-600/10 border border-emerald-500/20 px-6 py-4 md:px-8 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center gap-2 group transition-all ${isApiEnabled ? 'hover:border-blue-500/50' : 'grayscale opacity-50'}`}>
                     <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">Credit Yield</p>
                     <p className="text-2xl md:text-3xl font-black text-emerald-400 font-orbitron">+{50 + creditBonus}</p>
                     <p className="text-[7px] md:text-[8px] font-bold text-emerald-500/60 uppercase">Standard 50 + Buff Synergy</p>
