@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Sidebar from './components/Sidebar';
 import Taskbar from './components/Taskbar';
 import Desktop from './components/Desktop';
 import Window from './components/Window';
@@ -124,7 +125,6 @@ const App: React.FC = () => {
     setLearningStep('loading');
     
     if (!isApiEnabled) {
-      // STATIC MODE: Use pre-defined milestones from constants
       setTimeout(() => {
         const localMilestone = mod.milestones[mod.lessonsFinished];
         if (localMilestone) {
@@ -146,7 +146,6 @@ const App: React.FC = () => {
           throw new Error("Empty Response");
         }
     } catch (e) {
-        // Fallback to local if AI fails
         const localFallback = mod.milestones[mod.lessonsFinished];
         if (localFallback) {
           setDynamicMilestone(localFallback);
@@ -188,7 +187,7 @@ const App: React.FC = () => {
             icon: mod.icon,
             isOpen: true,
             isMinimized: false,
-            isMaximized: false, // Knowledge Nodes now open in windowed mode by default for better accessibility
+            isMaximized: false,
             zIndex: newZ
           }
         };
@@ -304,90 +303,94 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`h-screen w-screen bg-[#020617] text-slate-100 flex flex-col font-sans overflow-hidden transition-all duration-1000 ${focusMode ? 'grayscale-[0.4] brightness-[0.8]' : ''} ${!isApiEnabled ? 'saturate-[0.8] contrast-[1.05]' : ''}`}>
+    <div className={`h-screen w-screen bg-[#020617] text-slate-100 flex flex-row font-sans overflow-hidden transition-all duration-1000 ${focusMode ? 'grayscale-[0.4] brightness-[0.8]' : ''} ${!isApiEnabled ? 'saturate-[0.8] contrast-[1.05]' : ''}`}>
       <div className={`fixed inset-0 os-grid neural-pulse-bg pointer-events-none transition-opacity duration-1000 ${wallpaper === 'os-grid' ? 'opacity-10' : 'opacity-5'}`}></div>
 
-      <main className="relative flex-1 z-10 p-4 md:p-6 h-[calc(100vh-48px)] overflow-hidden">
-        <Desktop installedAppIds={installedAppIds} onIconClick={(id) => openApp(id)} />
-        
-        {(Object.values(windows) as WindowState[]).map(win => {
-          const mod = modules.find(m => m.id === win.id);
-          return win.isOpen && (
-            <Window key={win.id} {...win} isActive={activeApp === win.id} onClose={() => closeApp(win.id)} onFocus={() => { setMaxZ(z => z + 1); setWindows(w => ({ ...w, [win.id]: { ...w[win.id], zIndex: maxZ + 1 } })); setActiveApp(win.id); }} onMinimize={() => setWindows(w => ({ ...w, [win.id]: { ...w[win.id], isMinimized: true } }))} onMaximize={() => setWindows(w => ({ ...w, [win.id]: { ...w[win.id], isMaximized: !w[win.id].isMaximized } }))}>
-              {mod ? (
-                <LearningEngineOverlay 
-                  module={mod} 
-                  milestone={dynamicMilestone}
-                  equippedBuffs={equippedItems}
-                  xpMultiplier={xpMultiplier}
-                  creditBonus={creditBonus}
-                  step={learningStep} 
-                  currentQuizIndex={currentQuizIndex}
-                  currentScore={lessonScore}
-                  onClose={() => closeApp(mod.id)}
-                  onNextStep={() => setLearningStep('quiz')}
-                  onQuizSelect={setQuizSelection}
-                  onCheckAnswer={handleCheckAnswer}
-                  onNextLesson={async () => await loadLessonContent(mod)}
-                  onResultClose={() => closeApp(mod.id)}
-                  onTriggerFallback={handleManualFallback}
-                  selectedAnswer={quizSelection}
-                  feedback={quizFeedback}
-                  isApiEnabled={isApiEnabled}
-                />
-              ) : (
-                <>
-                  {win.id === 'dashboard' && <Dashboard user={user} modules={modules} inventory={inventory} onLaunchQuest={openApp} onEnroll={handleEnroll} isApiEnabled={isApiEnabled} />}
-                  {win.id === 'profile' && <Profile user={user} modules={modules} achievements={achievements} inventory={inventory} onUpdateUser={(u) => setUser(p => ({ ...p, ...u }))} />}
-                  {win.id === 'settings' && <Settings wallpaper={wallpaper} setWallpaper={setWallpaper} focusMode={focusMode} setFocusMode={setFocusMode} pulseSpeed={synapticPulse} setPulseSpeed={setSynapticPulse} />}
-                  {win.id === 'assistant' && <Assistant isApiEnabled={isApiEnabled} />}
-                  {win.id === 'journal' && <Emotions />}
-                  {win.id === 'appmanager' && <AppManager installedAppIds={installedAppIds} onInstall={(id) => setInstalledAppIds(p => [...p, id])} onUninstall={(id) => setInstalledAppIds(p => p.filter(a => a !== id))} onOpen={openApp} />}
-                  {win.id === 'course-creator' && <CourseCreator onAddModule={(m) => setModules(p => [...p, m])} />}
-                  {win.id === 'control-panel' && <ControlPanel focusMode={focusMode} setFocusMode={setFocusMode} pulseSpeed={synapticPulse} setPulseSpeed={setSynapticPulse} isApiEnabled={isApiEnabled} setIsApiEnabled={setIsApiEnabled} />}
-                  {win.id === 'calendar' && <Calendar />}
-                  {win.id === 'armory' && <Armory user={user} inventory={inventory} onBuy={(id) => { const item = inventory.find(i => i.id === id); if(item && user.credits >= item.cost) { setInventory(p => p.map(i => i.id === id ? { ...i, isOwned: true } : i)); setUser(u => ({ ...u, credits: u.credits - item.cost })); } }} onEquip={(id) => setInventory(p => p.map(i => i.id === id ? { ...i, isEquipped: !i.isEquipped } : i))} />}
-                  {win.id === 'trophy-room' && <Achievements achievements={achievements} />}
-                  {win.id === 'mindmap' && <MindMapper />}
-                  {win.id === 'timer' && <FocusTimer />}
-                  {win.id === 'calc' && <SmartCalc />}
-                  {win.id === 'neural-stream' && <NeuralStream isApiEnabled={isApiEnabled} setIsApiEnabled={setIsApiEnabled} pulseSpeed={synapticPulse} />}
-                  {win.id === 'os-helper' && <OSHelper />}
-                </>
-              )}
-            </Window>
-          );
-        })}
+      <Sidebar onLaunch={openApp} user={user} activeApp={activeApp} />
 
-        {newBadge && (
-          <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[100000] animate-in slide-in-from-top duration-700">
-             <div className="bg-amber-600/90 border border-amber-400 p-6 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.4)] flex items-center gap-6 backdrop-blur-xl">
-                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl text-white border border-white/30">
-                   <i className={`fas ${newBadge.icon}`}></i>
-                </div>
-                <div>
-                   <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60 mb-1">Trophy Room Update</h3>
-                   <h2 className="text-xl font-black text-white uppercase font-orbitron">{newBadge.title}</h2>
-                   <p className="text-[11px] text-white/80 font-medium">Achievement Unlocked & Synced</p>
-                </div>
-             </div>
-          </div>
-        )}
+      <div className="flex-1 flex flex-col relative h-screen overflow-hidden">
+        <main className="relative flex-1 z-10 p-4 md:p-6 h-[calc(100vh-48px)] overflow-hidden">
+          <Desktop installedAppIds={installedAppIds} onIconClick={(id) => openApp(id)} />
+          
+          {(Object.values(windows) as WindowState[]).map(win => {
+            const mod = modules.find(m => m.id === win.id);
+            return win.isOpen && (
+              <Window key={win.id} {...win} isActive={activeApp === win.id} onClose={() => closeApp(win.id)} onFocus={() => { setMaxZ(z => z + 1); setWindows(w => ({ ...w, [win.id]: { ...w[win.id], zIndex: maxZ + 1 } })); setActiveApp(win.id); }} onMinimize={() => setWindows(w => ({ ...w, [win.id]: { ...w[win.id], isMinimized: true } }))} onMaximize={() => setWindows(w => ({ ...w, [win.id]: { ...w[win.id], isMaximized: !w[win.id].isMaximized } }))}>
+                {mod ? (
+                  <LearningEngineOverlay 
+                    module={mod} 
+                    milestone={dynamicMilestone}
+                    equippedBuffs={equippedItems}
+                    xpMultiplier={xpMultiplier}
+                    creditBonus={creditBonus}
+                    step={learningStep} 
+                    currentQuizIndex={currentQuizIndex}
+                    currentScore={lessonScore}
+                    onClose={() => closeApp(mod.id)}
+                    onNextStep={() => setLearningStep('quiz')}
+                    onQuizSelect={setQuizSelection}
+                    onCheckAnswer={handleCheckAnswer}
+                    onNextLesson={async () => await loadLessonContent(mod)}
+                    onResultClose={() => closeApp(mod.id)}
+                    onTriggerFallback={handleManualFallback}
+                    selectedAnswer={quizSelection}
+                    feedback={quizFeedback}
+                    isApiEnabled={isApiEnabled}
+                  />
+                ) : (
+                  <>
+                    {win.id === 'dashboard' && <Dashboard user={user} modules={modules} inventory={inventory} onLaunchQuest={openApp} onEnroll={handleEnroll} isApiEnabled={isApiEnabled} />}
+                    {win.id === 'profile' && <Profile user={user} modules={modules} achievements={achievements} inventory={inventory} onUpdateUser={(u) => setUser(p => ({ ...p, ...u }))} />}
+                    {win.id === 'settings' && <Settings wallpaper={wallpaper} setWallpaper={setWallpaper} focusMode={focusMode} setFocusMode={setFocusMode} pulseSpeed={synapticPulse} setPulseSpeed={setSynapticPulse} />}
+                    {win.id === 'assistant' && <Assistant isApiEnabled={isApiEnabled} />}
+                    {win.id === 'journal' && <Emotions />}
+                    {win.id === 'appmanager' && <AppManager installedAppIds={installedAppIds} onInstall={(id) => setInstalledAppIds(p => [...p, id])} onUninstall={(id) => setInstalledAppIds(p => p.filter(a => a !== id))} onOpen={openApp} />}
+                    {win.id === 'course-creator' && <CourseCreator onAddModule={(m) => setModules(p => [...p, m])} />}
+                    {win.id === 'control-panel' && <ControlPanel focusMode={focusMode} setFocusMode={setFocusMode} pulseSpeed={synapticPulse} setPulseSpeed={setSynapticPulse} isApiEnabled={isApiEnabled} setIsApiEnabled={setIsApiEnabled} />}
+                    {win.id === 'calendar' && <Calendar />}
+                    {win.id === 'armory' && <Armory user={user} inventory={inventory} onBuy={(id) => { const item = inventory.find(i => i.id === id); if(item && user.credits >= item.cost) { setInventory(p => p.map(i => i.id === id ? { ...i, isOwned: true } : i)); setUser(u => ({ ...u, credits: u.credits - item.cost })); } }} onEquip={(id) => setInventory(p => p.map(i => i.id === id ? { ...i, isEquipped: !i.isEquipped } : i))} />}
+                    {win.id === 'trophy-room' && <Achievements achievements={achievements} />}
+                    {win.id === 'mindmap' && <MindMapper />}
+                    {win.id === 'timer' && <FocusTimer />}
+                    {win.id === 'calc' && <SmartCalc />}
+                    {win.id === 'neural-stream' && <NeuralStream isApiEnabled={isApiEnabled} setIsApiEnabled={setIsApiEnabled} pulseSpeed={synapticPulse} />}
+                    {win.id === 'os-helper' && <OSHelper />}
+                  </>
+                )}
+              </Window>
+            );
+          })}
 
-        {enrollmentSuccessTitle && (
-          <div className="fixed inset-0 z-[100000] pointer-events-none flex items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-            <div className="bg-[#020617]/90 border-2 border-emerald-500/50 p-12 rounded-[3.5rem] shadow-[0_0_120px_rgba(16,185,129,0.3)] text-center backdrop-blur-2xl">
-              <i className="fas fa-satellite-dish text-5xl text-emerald-400 animate-pulse mb-6 block"></i>
-              <h2 className="text-emerald-500 uppercase tracking-[0.5em] font-orbitron text-[10px] mb-2">Neural Node Activated</h2>
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{enrollmentSuccessTitle}</h1>
+          {newBadge && (
+            <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[100000] animate-in slide-in-from-top duration-700">
+               <div className="bg-amber-600/90 border border-amber-400 p-6 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.4)] flex items-center gap-6 backdrop-blur-xl">
+                  <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl text-white border border-white/30">
+                     <i className={`fas ${newBadge.icon}`}></i>
+                  </div>
+                  <div>
+                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60 mb-1">Trophy Room Update</h3>
+                     <h2 className="text-xl font-black text-white uppercase font-orbitron">{newBadge.title}</h2>
+                     <p className="text-[11px] text-white/80 font-medium">Achievement Unlocked & Synced</p>
+                  </div>
+               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
 
-      <Taskbar isApiEnabled={isApiEnabled} windows={(Object.values(windows) as WindowState[]).filter(w => w.isOpen)} activeApp={activeApp} onAppClick={openApp} onStartClick={() => setIsStartOpen(!isStartOpen)} onControlClick={() => openApp('control-panel')} onCalendarClick={() => openApp('calendar')} />
-      {isStartOpen && <StartMenu installedAppIds={installedAppIds} onClose={() => setIsStartOpen(false)} onLaunch={openApp} />}
-      <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onLaunch={openApp} />
+          {enrollmentSuccessTitle && (
+            <div className="fixed inset-0 z-[100000] pointer-events-none flex items-center justify-center animate-in fade-in zoom-in-95 duration-500">
+              <div className="bg-[#020617]/90 border-2 border-emerald-500/50 p-12 rounded-[3.5rem] shadow-[0_0_120px_rgba(16,185,129,0.3)] text-center backdrop-blur-2xl">
+                <i className="fas fa-satellite-dish text-5xl text-emerald-400 animate-pulse mb-6 block"></i>
+                <h2 className="text-emerald-500 uppercase tracking-[0.5em] font-orbitron text-[10px] mb-2">Neural Node Activated</h2>
+                <h1 className="text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{enrollmentSuccessTitle}</h1>
+              </div>
+            </div>
+          )}
+        </main>
+
+        <Taskbar isApiEnabled={isApiEnabled} windows={(Object.values(windows) as WindowState[]).filter(w => w.isOpen)} activeApp={activeApp} onAppClick={openApp} onStartClick={() => setIsStartOpen(!isStartOpen)} onControlClick={() => openApp('control-panel')} onCalendarClick={() => openApp('calendar')} />
+        {isStartOpen && <StartMenu installedAppIds={installedAppIds} onClose={() => setIsStartOpen(false)} onLaunch={openApp} />}
+        <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onLaunch={openApp} />
+      </div>
     </div>
   );
 };
@@ -415,7 +418,6 @@ const LearningEngineOverlay: React.FC<{
   const [synthesisProgress, setSynthesisProgress] = useState(0);
   const currentQuiz = milestone?.quizzes?.[currentQuizIndex];
 
-  // Reactive fallback: If Neural Link is disabled during a synthesis step, immediately shift to archive.
   useEffect(() => {
     if (step === 'loading' && !isApiEnabled) {
       onTriggerFallback();
@@ -550,7 +552,6 @@ const LearningEngineOverlay: React.FC<{
                   <i className={`fas ${isApiEnabled ? 'fa-microchip' : 'fa-box-archive'} text-[200px]`}></i>
                 </div>
                 <div className="prose prose-invert max-w-none text-base md:text-lg text-slate-300 leading-relaxed font-medium markdown-content">
-                   {/* Simplified markdown rendering */}
                    {milestone?.content?.split('\n').map((line: string, idx: number) => {
                      if (line.startsWith('###')) return <h3 key={idx} className="text-xl font-bold text-white mt-6 mb-3 font-orbitron">{line.replace('###', '')}</h3>;
                      if (line.startsWith('*')) return <li key={idx} className="ml-4 list-disc text-slate-400 mb-1">{line.replace('*', '')}</li>;
@@ -639,7 +640,7 @@ const LearningEngineOverlay: React.FC<{
                     <p className="text-2xl md:text-3xl font-black text-blue-400 font-orbitron">+{Math.round(100 * xpMultiplier)}</p>
                     <p className="text-[7px] md:text-[8px] font-bold text-blue-500/60 uppercase">Base 100 + Buff Bonus</p>
                   </div>
-                  <div className={`bg-emerald-600/10 border border-emerald-500/20 px-6 py-4 md:px-8 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center gap-2 group transition-all ${isApiEnabled ? 'hover:border-blue-500/50' : 'grayscale opacity-50'}`}>
+                  <div className={`bg-emerald-600/10 border border-emerald-500/20 px-6 py-4 md:px-8 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center gap-2 group transition-all ${isApiEnabled ? 'hover:border-emerald-500/50' : 'grayscale opacity-50'}`}>
                     <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">Credit Yield</p>
                     <p className="text-2xl md:text-3xl font-black text-emerald-400 font-orbitron">+{50 + creditBonus}</p>
                     <p className="text-[7px] md:text-[8px] font-bold text-emerald-500/60 uppercase">Standard 50 + Buff Synergy</p>

@@ -1,59 +1,92 @@
 
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { AppId, UserState } from '../types';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onLaunch: (id: AppId) => void;
+  user: UserState;
+  activeApp: AppId | null;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onLaunch, user, activeApp }) => {
   const navItems = [
-    { path: '/', icon: 'fa-chart-pie', label: 'Dashboard' },
-    { path: '/modules', icon: 'fa-cubes', label: 'Modules' },
-    { path: '/assistant', icon: 'fa-robot', label: 'Core AI' },
-    { path: '/emotions', icon: 'fa-heart-pulse', label: 'Emotions' },
-    { path: '/profile', icon: 'fa-user-circle', label: 'Profile' },
+    { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
+    { id: 'appmanager', icon: 'fa-cubes', label: 'Ecosystem' },
+    { id: 'assistant', icon: 'fa-robot', label: 'Core AI' },
+    { id: 'journal', icon: 'fa-heart-pulse', label: 'Emotions' },
+    { id: 'profile', icon: 'fa-user-circle', label: 'Profile' },
+    { id: 'armory', icon: 'fa-shield-halved', label: 'Armory' },
   ];
 
   return (
-    <aside className="w-20 md:w-64 glass h-screen sticky top-0 flex flex-col items-center py-8 border-r border-slate-800 transition-all">
-      <div className="flex items-center gap-3 mb-12 px-6">
-        <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center glow-blue">
+    <aside className="w-16 md:w-64 glass h-screen sticky top-0 flex flex-col items-center py-6 border-r border-white/5 transition-all z-[10001] shrink-0">
+      <div className="flex items-center gap-3 mb-10 px-4 cursor-pointer" onClick={() => onLaunch('os-helper')}>
+        <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center glow-blue shadow-lg shadow-blue-500/20">
           <i className="fas fa-microchip text-xl text-white"></i>
         </div>
-        <span className="hidden md:block font-orbitron text-lg font-bold gradient-text tracking-widest">
-          MECHDYANE
-        </span>
+        <div className="hidden md:block">
+            <span className="font-orbitron text-sm font-black text-white tracking-widest block leading-none">
+            MECHDYANE
+            </span>
+            <span className="text-[7px] text-blue-400 font-black uppercase tracking-[0.3em] mt-1 block">OS v9.1 Core</span>
+        </div>
       </div>
 
-      <nav className="flex-1 w-full px-4 space-y-2">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `
-              flex items-center gap-4 px-4 py-3 rounded-xl transition-all group
-              ${isActive ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'}
-            `}
-          >
-            <i className={`fas ${item.icon} text-xl w-6 text-center group-hover:scale-110 transition-transform`}></i>
-            <span className="hidden md:block font-medium">{item.label}</span>
-          </NavLink>
-        ))}
+      <nav className="flex-1 w-full px-2 md:px-4 space-y-1.5">
+        {navItems.map((item) => {
+          const isActive = activeApp === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onLaunch(item.id)}
+              className={`
+                w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all group relative
+                ${isActive 
+                  ? 'bg-blue-600/20 text-blue-400 border border-blue-500/20 shadow-inner' 
+                  : 'text-slate-500 hover:bg-white/5 hover:text-slate-200 border border-transparent'}
+              `}
+              title={item.label}
+            >
+              <i className={`fas ${item.icon} text-lg w-6 text-center group-hover:scale-110 transition-transform ${isActive ? 'text-blue-400' : ''}`}></i>
+              <span className="hidden md:block font-orbitron text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+              
+              {isActive && (
+                <div className="absolute left-0 top-1/4 bottom-1/4 w-1 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+              )}
+            </button>
+          );
+        })}
       </nav>
 
-      <div className="mt-auto px-4 w-full">
-        <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hidden md:block">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-              <i className="fas fa-fire text-orange-500"></i>
+      <div className="mt-auto px-4 w-full space-y-4">
+        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hidden md:block group hover:border-orange-500/20 transition-all">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center border border-orange-500/10">
+              <i className="fas fa-fire text-orange-500 text-xs"></i>
             </div>
             <div>
-              <p className="text-xs text-slate-500 font-bold uppercase">Streak</p>
-              <p className="text-sm font-orbitron text-slate-200">12 DAYS</p>
+              <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Neural Streak</p>
+              <p className="text-xs font-orbitron text-slate-200 font-black">{user.streak} DAYS</p>
             </div>
           </div>
         </div>
-        <button className="w-full mt-4 flex items-center justify-center gap-3 text-slate-500 hover:text-red-400 transition-colors p-4">
-          <i className="fas fa-power-off"></i>
-          <span className="hidden md:block text-sm font-semibold">Sign Out</span>
-        </button>
+
+        <div className="flex flex-col gap-2">
+            <button 
+                onClick={() => onLaunch('settings')}
+                className="w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3 rounded-xl text-slate-500 hover:text-slate-200 transition-colors group"
+            >
+                <i className="fas fa-cog text-base group-hover:rotate-90 transition-transform duration-500"></i>
+                <span className="hidden md:block text-[9px] font-black uppercase tracking-widest">Settings</span>
+            </button>
+            <button 
+                onClick={() => { if(confirm("Terminate link with core?")) window.location.reload(); }}
+                className="w-full flex items-center justify-center md:justify-start gap-4 px-4 py-3 rounded-xl text-slate-600 hover:text-red-400 transition-colors group"
+            >
+                <i className="fas fa-power-off text-base"></i>
+                <span className="hidden md:block text-[9px] font-black uppercase tracking-widest">Sign Out</span>
+            </button>
+        </div>
       </div>
     </aside>
   );
