@@ -445,41 +445,41 @@ const LearningEngineOverlay: React.FC<{
   }, [step, isApiEnabled]);
 
   if (step === 'loading') return (
-    <div className="absolute inset-0 bg-[#020617] z-40 flex flex-col items-center justify-center text-center p-12 overflow-hidden">
+    <div className="absolute inset-0 bg-[#020617] z-40 flex flex-col items-center justify-center text-center p-6 md:p-12 overflow-hidden">
       <div className="absolute inset-0 os-grid opacity-10 pointer-events-none"></div>
-      <div className="w-24 h-24 md:w-32 md:h-32 relative mb-12">
+      <div className="w-20 h-20 md:w-32 md:h-32 relative mb-8 md:mb-12">
         <div className={`absolute inset-0 border-4 ${isApiEnabled ? 'border-blue-500/20' : 'border-amber-500/20'} rounded-full`}></div>
         <div className={`absolute inset-0 border-4 ${isApiEnabled ? 'border-blue-500' : 'border-amber-500'} border-t-transparent rounded-full animate-spin`}></div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <i className={`fas ${isApiEnabled ? 'fa-brain text-blue-500' : 'fa-database text-amber-500'} text-3xl md:text-4xl animate-pulse`}></i>
+          <i className={`fas ${isApiEnabled ? 'fa-brain text-blue-500' : 'fa-database text-amber-500'} text-2xl md:text-4xl animate-pulse`}></i>
         </div>
       </div>
-      <div className="space-y-6 max-w-md w-full px-6">
-        <h3 className={`text-xl md:text-2xl font-orbitron font-black text-white uppercase tracking-widest ${!isApiEnabled ? 'text-amber-400' : ''}`}>
+      <div className="space-y-4 md:space-y-6 max-w-md w-full px-4">
+        <h3 className={`text-lg md:text-2xl font-orbitron font-black text-white uppercase tracking-widest ${!isApiEnabled ? 'text-amber-400' : ''}`}>
           {isApiEnabled ? 'Curriculum Synthesis' : 'Archive Retrieval'}
         </h3>
-        <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-8">
+        <p className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-4 md:mb-8">
           {isApiEnabled ? 'Core AI Indexing Synaptic Layers...' : 'Scanning Local Cryptic Storage...'}
         </p>
         
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3">
           <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
              <div className={`h-full transition-all duration-300 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]'}`} style={{ width: `${synthesisProgress}%` }}></div>
           </div>
-          <div className="flex justify-between text-[7px] md:text-[8px] font-black text-slate-600 uppercase tracking-widest">
+          <div className="flex justify-between text-[7px] md:text-[8px] font-black text-slate-600 uppercase tracking-widest px-1">
              <span>{isApiEnabled ? 'Assembly Stage' : 'Data Reconstruction'}</span>
              <span>{synthesisProgress}% Logged</span>
           </div>
         </div>
 
-        <div className="pt-10 flex flex-col items-center gap-4">
+        <div className="pt-6 md:pt-10 flex flex-col items-center gap-3 md:gap-4 w-full">
           <button 
             onClick={onTriggerFallback}
-            className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black text-slate-400 hover:text-white uppercase tracking-[0.2em] transition-all"
+            className="w-full md:w-auto px-6 py-4 md:py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black text-slate-400 hover:text-white uppercase tracking-[0.2em] transition-all"
           >
             Engage Archive Fallback
           </button>
-          <button onClick={onClose} className="text-[9px] font-black text-slate-600 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center gap-2">
+          <button onClick={onClose} className="text-[9px] font-black text-slate-600 hover:text-red-400 uppercase tracking-widest transition-colors flex items-center gap-2 py-2">
             <i className="fas fa-arrow-left"></i> Abort Link
           </button>
         </div>
@@ -488,43 +488,43 @@ const LearningEngineOverlay: React.FC<{
   );
 
   if (step === 'error') return (
-    <div className="absolute inset-0 bg-[#020617] z-40 flex flex-col items-center justify-center text-center p-12">
-      <i className="fas fa-triangle-exclamation text-6xl text-red-500 mb-8"></i>
-      <h2 className="text-2xl font-black font-orbitron text-white uppercase tracking-tighter mb-4">Neural Buffer Overload</h2>
-      <p className="text-slate-400 text-sm max-w-md mb-8">Failed to synthesize curriculum. If you are in Static Mode, ensure local milestones are indexed for this node.</p>
-      <button onClick={onClose} className="px-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-black uppercase tracking-widest">Abort Link</button>
+    <div className="absolute inset-0 bg-[#020617] z-40 flex flex-col items-center justify-center text-center p-6 md:p-12">
+      <i className="fas fa-triangle-exclamation text-4xl md:text-6xl text-red-500 mb-6 md:mb-8"></i>
+      <h2 className="text-xl md:text-2xl font-black font-orbitron text-white uppercase tracking-tighter mb-3 md:mb-4">Neural Buffer Overload</h2>
+      <p className="text-slate-400 text-xs md:text-sm max-w-md mb-6 md:mb-8 px-4">Failed to synthesize curriculum. If you are in Static Mode, ensure local milestones are indexed for this node.</p>
+      <button onClick={onClose} className="w-full md:w-auto px-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-black uppercase tracking-widest font-orbitron">Abort Link</button>
     </div>
   );
 
   return (
     <div className={`absolute inset-0 bg-slate-950 z-0 text-slate-100 flex flex-col overflow-hidden animate-in fade-in duration-500 ${!isApiEnabled ? 'border-l-4 border-amber-600/50' : ''}`}>
-      <div className={`h-16 md:h-20 glass border-b ${isApiEnabled ? 'border-white/10' : 'border-amber-500/30'} flex items-center justify-between px-4 md:px-10 shrink-0`}>
-        <div className="flex items-center gap-4 md:gap-6">
+      <div className={`h-16 md:h-20 glass border-b ${isApiEnabled ? 'border-white/10' : 'border-amber-500/30'} flex items-center justify-between px-3 md:px-10 shrink-0`}>
+        <div className="flex items-center gap-2 md:gap-6 min-w-0">
           <button 
             onClick={onClose} 
-            className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-blue-400 hover:border-blue-500/30 transition-all active:scale-90"
+            className="w-9 h-9 md:w-12 md:h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-blue-400 hover:border-blue-500/30 transition-all active:scale-90 shrink-0"
             title="Return to Hub"
           >
-            <i className="fas fa-arrow-left text-sm md:text-base"></i>
+            <i className="fas fa-arrow-left text-xs md:text-base"></i>
           </button>
-          <div>
-            <h3 className="text-sm md:text-xl font-black uppercase font-orbitron tracking-tight truncate max-w-[120px] xs:max-w-[150px] md:max-w-none">{module.title}</h3>
-            <p className={`text-[7px] md:text-[10px] font-black uppercase tracking-[0.4em] leading-none mt-1 ${isApiEnabled ? 'text-blue-400' : 'text-amber-400'}`}>
+          <div className="min-w-0">
+            <h3 className="text-xs md:text-xl font-black uppercase font-orbitron tracking-tight truncate leading-tight">{module.title}</h3>
+            <p className={`text-[6px] md:text-[10px] font-black uppercase tracking-[0.4em] leading-none mt-1 truncate ${isApiEnabled ? 'text-blue-400' : 'text-amber-400'}`}>
               {isApiEnabled ? 'Synaptic Layer' : 'Archive Sector'} {module.lessonsFinished + 1}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3 md:gap-6">
+        <div className="flex items-center gap-2 md:gap-6 shrink-0">
           {isApiEnabled ? (
-            <div className="flex items-center gap-2 bg-blue-600/10 border border-blue-500/20 px-2 py-1 md:px-4 md:py-1.5 rounded-full">
-               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-               <span className="text-[7px] md:text-[9px] font-black text-blue-400 uppercase tracking-widest hidden xs:block">Neural Stream Active</span>
+            <div className="flex items-center gap-1 md:gap-2 bg-blue-600/10 border border-blue-500/20 px-2 py-1 md:px-4 md:py-1.5 rounded-full">
+               <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+               <span className="text-[6px] md:text-[9px] font-black text-blue-400 uppercase tracking-widest hidden xs:block">Neural Active</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 bg-amber-600/10 border border-amber-500/20 px-2 py-1 md:px-4 md:py-1.5 rounded-full animate-pulse">
+            <div className="flex items-center gap-1 md:gap-2 bg-amber-600/10 border border-amber-500/20 px-2 py-1 md:px-4 md:py-1.5 rounded-full animate-pulse">
                <i className="fas fa-shield-halved text-amber-500 text-[8px] md:text-[10px]"></i>
-               <span className="text-[7px] md:text-[9px] font-black text-amber-500 uppercase tracking-widest hidden xs:block">Static Archive Active</span>
+               <span className="text-[6px] md:text-[9px] font-black text-amber-500 uppercase tracking-widest hidden xs:block">Static Active</span>
             </div>
           )}
           
@@ -540,30 +540,29 @@ const LearningEngineOverlay: React.FC<{
               <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">+{creditBonus} CRD Synergy</p>
             </div>
           </div>
-          <div className={`w-1.5 h-1.5 rounded-full ${isApiEnabled ? 'bg-blue-500' : 'bg-amber-500'} animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]`}></div>
+          <div className={`w-1 md:w-1.5 h-1 md:h-1.5 rounded-full ${isApiEnabled ? 'bg-blue-500' : 'bg-amber-500'} animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]`}></div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-12 custom-scrollbar bg-[#020617] relative">
+      <div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar bg-[#020617] relative">
         <div className={`absolute inset-0 os-grid ${isApiEnabled ? 'opacity-[0.03]' : 'opacity-[0.015] grayscale'} pointer-events-none`}></div>
-        <div className="max-w-4xl mx-auto space-y-12 relative z-10">
+        <div className="max-w-4xl mx-auto space-y-6 md:space-y-12 relative z-10">
           {step === 'lesson' && (
-            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24">
-              <div className="space-y-4">
-                <p className={`text-[10px] font-black uppercase tracking-[0.5em] font-orbitron ${isApiEnabled ? 'text-blue-500' : 'text-amber-500'}`}>
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-6 md:space-y-12 pb-24">
+              <div className="space-y-2 md:space-y-4 px-2">
+                <p className={`text-[8px] md:text-[10px] font-black uppercase tracking-[0.5em] font-orbitron ${isApiEnabled ? 'text-blue-500' : 'text-amber-500'}`}>
                   {isApiEnabled ? 'Knowledge Node Verification' : 'Archive Data Reconstruction'}
                 </p>
-                <h1 className="text-3xl md:text-5xl font-black text-white font-orbitron leading-tight">{milestone?.title}</h1>
+                <h1 className="text-xl md:text-5xl font-black text-white font-orbitron leading-tight">{milestone?.title}</h1>
               </div>
               
-              <div className={`glass border rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 shadow-2xl space-y-10 relative overflow-hidden group ${isApiEnabled ? 'border-white/10' : 'border-amber-500/20 bg-amber-950/5'}`}>
+              <div className={`glass border rounded-[1.5rem] md:rounded-[3rem] p-5 md:p-16 shadow-2xl space-y-6 md:space-y-10 relative overflow-hidden group ${isApiEnabled ? 'border-white/10' : 'border-amber-500/20 bg-amber-950/5'}`}>
                 <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:scale-110 transition-transform duration-1000 hidden md:block">
                   <i className={`fas ${isApiEnabled ? 'fa-microchip' : 'fa-box-archive'} text-[200px]`}></i>
                 </div>
-                <div className="prose prose-invert max-w-none text-base md:text-lg text-slate-300 leading-relaxed font-medium markdown-content">
-                   {/* Simplified markdown rendering */}
+                <div className="prose prose-invert max-w-none text-sm md:text-lg text-slate-300 leading-relaxed font-medium markdown-content">
                    {milestone?.content?.split('\n').map((line: string, idx: number) => {
-                     if (line.startsWith('###')) return <h3 key={idx} className="text-xl font-bold text-white mt-6 mb-3 font-orbitron">{line.replace('###', '')}</h3>;
+                     if (line.startsWith('###')) return <h3 key={idx} className="text-base md:text-xl font-bold text-white mt-6 mb-3 font-orbitron">{line.replace('###', '')}</h3>;
                      if (line.startsWith('*')) return <li key={idx} className="ml-4 list-disc text-slate-400 mb-1">{line.replace('*', '')}</li>;
                      if (line.match(/^\d\./)) return <li key={idx} className="ml-4 list-decimal text-slate-400 mb-1">{line}</li>;
                      return <p key={idx} className="mb-4">{line}</p>;
@@ -571,11 +570,11 @@ const LearningEngineOverlay: React.FC<{
                 </div>
                 
                 {milestone?.objectives && (
-                  <div className="pt-10 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="pt-6 md:pt-10 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     {milestone?.objectives?.map((obj: string, i: number) => (
-                      <div key={i} className="flex gap-4 items-start">
-                         <i className={`fas fa-circle-check mt-1 ${isApiEnabled ? 'text-emerald-500' : 'text-amber-600'}`}></i>
-                         <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">{obj}</p>
+                      <div key={i} className="flex gap-3 md:gap-4 items-start">
+                         <i className={`fas fa-circle-check mt-1 text-xs md:text-sm ${isApiEnabled ? 'text-emerald-500' : 'text-amber-600'}`}></i>
+                         <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase leading-relaxed">{obj}</p>
                       </div>
                     ))}
                   </div>
@@ -583,84 +582,86 @@ const LearningEngineOverlay: React.FC<{
               </div>
               
               {milestone?.detailedNotes && (
-                <div className={`bg-slate-900 border p-8 md:p-10 rounded-[2rem] md:rounded-[2.5rem] space-y-6 ${isApiEnabled ? 'border-white/5' : 'border-amber-500/10'}`}>
-                   <h3 className="text-sm font-black text-white uppercase font-orbitron tracking-widest flex items-center gap-3">
+                <div className={`bg-slate-900 border p-6 md:p-10 rounded-[1.5rem] md:rounded-[2.5rem] space-y-4 md:space-y-6 ${isApiEnabled ? 'border-white/5' : 'border-amber-500/10'}`}>
+                   <h3 className="text-xs md:text-sm font-black text-white uppercase font-orbitron tracking-widest flex items-center gap-3">
                      <i className={`fas ${isApiEnabled ? 'fa-brain text-blue-400' : 'fa-database text-amber-500'}`}></i> 
                      {isApiEnabled ? 'Synaptic Deep Dive' : 'Archival Insight'}
                    </h3>
-                   <p className={`text-sm text-slate-400 leading-relaxed font-medium whitespace-pre-line border-l-2 pl-6 italic ${isApiEnabled ? 'border-blue-500/30' : 'border-amber-600/30'}`}>
+                   <p className={`text-xs md:text-sm text-slate-400 leading-relaxed font-medium whitespace-pre-line border-l-2 pl-4 md:pl-6 italic ${isApiEnabled ? 'border-blue-500/30' : 'border-amber-600/30'}`}>
                      {milestone?.detailedNotes}
                    </p>
                 </div>
               )}
 
-              <button onClick={onNextStep} className={`group w-full py-6 md:py-8 text-white font-black rounded-3xl text-lg md:text-xl font-orbitron uppercase tracking-widest shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-6 ${isApiEnabled ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/20' : 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/20'}`}>
-                {isApiEnabled ? 'Commit to Neural Memory' : 'Commit to Local Cache'} <i className="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
-              </button>
+              <div className="px-2">
+                <button onClick={onNextStep} className={`group w-full py-5 md:py-8 text-white font-black rounded-2xl md:rounded-3xl text-sm md:text-xl font-orbitron uppercase tracking-widest shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 md:gap-6 ${isApiEnabled ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/20' : 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/20'}`}>
+                  {isApiEnabled ? 'Commit to Neural Memory' : 'Commit to Local Cache'} <i className="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
+                </button>
+              </div>
             </div>
           )}
 
           {step === 'quiz' && currentQuiz && (
-            <div className={`glass rounded-[2rem] md:rounded-[3.5rem] p-6 md:p-16 shadow-2xl border animate-in zoom-in-95 duration-500 relative overflow-hidden ${isApiEnabled ? 'border-white/10' : 'border-amber-500/30'}`}>
+            <div className={`glass rounded-[1.5rem] md:rounded-[3.5rem] p-5 md:p-16 shadow-2xl border animate-in zoom-in-95 duration-500 relative overflow-hidden ${isApiEnabled ? 'border-white/10' : 'border-amber-500/30'}`}>
               <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
                 <div className={`h-full transition-all duration-500 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-amber-500'}`} style={{ width: `${(currentQuizIndex / milestone.quizzes.length) * 100}%` }}></div>
               </div>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 md:mb-12">
-                 <h3 className={`text-[10px] font-black uppercase tracking-[0.4em] font-orbitron ${isApiEnabled ? 'text-blue-400' : 'text-amber-400'}`}>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-6 md:mb-12">
+                 <h3 className={`text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] font-orbitron ${isApiEnabled ? 'text-blue-400' : 'text-amber-400'}`}>
                    {isApiEnabled ? 'Logic Verification' : 'Archive Check'}: Phase {currentQuizIndex + 1}/{milestone.quizzes.length}
                  </h3>
-                 <span className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest">Mastery Multiplier: x{xpMultiplier.toFixed(1)}</span>
+                 <span className="text-[8px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest">Multiplier: x{xpMultiplier.toFixed(1)}</span>
               </div>
-              <h2 className="text-xl md:text-3xl font-black mb-8 md:mb-12 font-orbitron text-white leading-tight">{currentQuiz.question}</h2>
-              <div className="grid grid-cols-1 gap-3 md:gap-4 mb-8 md:mb-12">
+              <h2 className="text-lg md:text-3xl font-black mb-6 md:mb-12 font-orbitron text-white leading-tight">{currentQuiz.question}</h2>
+              <div className="grid grid-cols-1 gap-3 md:gap-4 mb-6 md:mb-12">
                 {currentQuiz.options.map((opt: any) => (
-                  <button key={opt.letter} disabled={!!feedback} onClick={() => onQuizSelect(opt.letter)} className={`group w-full p-4 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] border-2 text-left text-base md:text-lg font-bold flex items-center gap-4 md:gap-6 transition-all ${selectedAnswer === opt.letter ? (isApiEnabled ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-amber-500 bg-amber-500/10 text-amber-400') : 'border-white/5 bg-white/[0.02] text-slate-500 hover:border-white/10 hover:text-slate-300'}`}>
+                  <button key={opt.letter} disabled={!!feedback} onClick={() => onQuizSelect(opt.letter)} className={`group w-full p-4 md:p-6 rounded-[1.2rem] md:rounded-[2.5rem] border-2 text-left text-sm md:text-lg font-bold flex items-center gap-4 md:gap-6 transition-all ${selectedAnswer === opt.letter ? (isApiEnabled ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-amber-500 bg-amber-500/10 text-amber-400') : 'border-white/5 bg-white/[0.02] text-slate-500 hover:border-white/10 hover:text-slate-300'}`}>
                     <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center font-black transition-all shrink-0 ${selectedAnswer === opt.letter ? (isApiEnabled ? 'bg-blue-600 text-white shadow-lg' : 'bg-amber-600 text-white') : 'bg-slate-900 text-slate-700 group-hover:bg-slate-800'}`}>{opt.letter}</div>
-                    <span className="flex-1 leading-tight text-sm md:text-lg">{opt.text}</span>
+                    <span className="flex-1 leading-tight text-xs md:text-lg">{opt.text}</span>
                     {feedback && opt.letter === currentQuiz.correctLetter && <i className="fas fa-check-circle text-emerald-500 text-xl md:text-2xl"></i>}
                     {feedback && selectedAnswer === opt.letter && opt.letter !== currentQuiz.correctLetter && <i className="fas fa-times-circle text-rose-500 text-xl md:text-2xl"></i>}
                   </button>
                 ))}
               </div>
-              <button disabled={!selectedAnswer || !!feedback} onClick={onCheckAnswer} className={`w-full py-5 md:py-6 text-white font-black rounded-[1.5rem] md:rounded-[2rem] text-base md:text-lg uppercase font-orbitron shadow-2xl transition-all disabled:opacity-30 disabled:grayscale active:scale-95 ${isApiEnabled ? 'bg-blue-600 hover:bg-blue-500' : 'bg-amber-600 hover:bg-amber-500'}`}>
+              <button disabled={!selectedAnswer || !!feedback} onClick={onCheckAnswer} className={`w-full py-4 md:py-6 text-white font-black rounded-xl md:rounded-[2rem] text-sm md:text-lg uppercase font-orbitron shadow-2xl transition-all disabled:opacity-30 disabled:grayscale active:scale-95 ${isApiEnabled ? 'bg-blue-600 hover:bg-blue-500' : 'bg-amber-600 hover:bg-amber-500'}`}>
                 {isApiEnabled ? 'Execute Logic Check' : 'Execute Archival Verification'}
               </button>
             </div>
           )}
 
           {step === 'result' && (
-            <div className="text-center py-12 md:py-16 space-y-12 animate-in zoom-in-95 duration-500">
+            <div className="text-center py-8 md:py-16 space-y-8 md:space-y-12 animate-in zoom-in-95 duration-500">
               <div className="relative">
-                <div className={`absolute inset-0 blur-[60px] md:blur-[100px] rounded-full ${isApiEnabled ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}></div>
-                <div className={`w-36 h-36 md:w-64 md:h-64 rounded-full text-white flex flex-col items-center justify-center mx-auto border-[8px] md:border-[12px] border-[#020617] shadow-2xl relative z-10 animate-[bounce_2s_infinite] ${isApiEnabled ? 'bg-emerald-600' : 'bg-amber-600'}`}>
+                <div className={`absolute inset-0 blur-[40px] md:blur-[100px] rounded-full ${isApiEnabled ? 'bg-emerald-500/20' : 'bg-amber-500/20'}`}></div>
+                <div className={`w-32 h-32 md:w-64 md:h-64 rounded-full text-white flex flex-col items-center justify-center mx-auto border-[6px] md:border-[12px] border-[#020617] shadow-2xl relative z-10 animate-[bounce_2s_infinite] ${isApiEnabled ? 'bg-emerald-600' : 'bg-amber-600'}`}>
                   <span className="text-4xl md:text-8xl font-black font-orbitron">{currentScore}</span>
-                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mt-2">{isApiEnabled ? 'Sync Clear' : 'Archive Restored'}</span>
+                  <span className="text-[7px] md:text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mt-1 md:mt-2">{isApiEnabled ? 'Sync Clear' : 'Archive Restored'}</span>
                 </div>
               </div>
               
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h2 className="text-3xl md:text-4xl font-black text-white font-orbitron uppercase tracking-tighter">{isApiEnabled ? 'Node Integrated' : 'Sector Restored'}</h2>
-                  <p className="text-slate-500 font-black uppercase tracking-widest text-[9px] md:text-[10px]">Neural Path: {module.title}</p>
+              <div className="space-y-4 md:space-y-6">
+                <div className="space-y-1 md:space-y-2 px-4">
+                  <h2 className="text-2xl md:text-4xl font-black text-white font-orbitron uppercase tracking-tighter">{isApiEnabled ? 'Node Integrated' : 'Sector Restored'}</h2>
+                  <p className="text-slate-500 font-black uppercase tracking-widest text-[8px] md:text-[10px]">Neural Path: {module.title}</p>
                 </div>
                 
-                <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-6 px-4">
-                  <div className={`bg-blue-600/10 border border-blue-500/20 px-6 py-4 md:px-8 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center gap-2 group transition-all ${isApiEnabled ? 'hover:border-blue-500/50' : 'grayscale opacity-50'}`}>
-                    <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">XP Allocation</p>
-                    <p className="text-2xl md:text-3xl font-black text-blue-400 font-orbitron">+{Math.round(100 * xpMultiplier)}</p>
-                    <p className="text-[7px] md:text-[8px] font-bold text-blue-500/60 uppercase">Base 100 + Buff Bonus</p>
+                <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-6 px-6">
+                  <div className={`bg-blue-600/10 border border-blue-500/20 px-5 py-4 md:px-8 md:py-6 rounded-[1.5rem] md:rounded-[2.5rem] flex flex-col items-center gap-1 md:gap-2 group transition-all ${isApiEnabled ? 'hover:border-blue-500/50' : 'grayscale opacity-50'}`}>
+                    <p className="text-[7px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">XP Allocation</p>
+                    <p className="text-xl md:text-3xl font-black text-blue-400 font-orbitron">+{Math.round(100 * xpMultiplier)}</p>
+                    <p className="text-[6px] md:text-[8px] font-bold text-blue-500/60 uppercase">Base 100 + Buff</p>
                   </div>
-                  <div className={`bg-emerald-600/10 border border-emerald-500/20 px-6 py-4 md:px-8 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center gap-2 group transition-all ${isApiEnabled ? 'hover:border-blue-500/50' : 'grayscale opacity-50'}`}>
-                    <p className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">Credit Yield</p>
-                    <p className="text-2xl md:text-3xl font-black text-emerald-400 font-orbitron">+{50 + creditBonus}</p>
-                    <p className="text-[7px] md:text-[8px] font-bold text-emerald-500/60 uppercase">Standard 50 + Buff Synergy</p>
+                  <div className={`bg-emerald-600/10 border border-emerald-500/20 px-5 py-4 md:px-8 md:py-6 rounded-[1.5rem] md:rounded-[2.5rem] flex flex-col items-center gap-1 md:gap-2 group transition-all ${isApiEnabled ? 'hover:border-emerald-500/50' : 'grayscale opacity-50'}`}>
+                    <p className="text-[7px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">Credit Yield</p>
+                    <p className="text-xl md:text-3xl font-black text-emerald-400 font-orbitron">+{50 + creditBonus}</p>
+                    <p className="text-[6px] md:text-[8px] font-bold text-emerald-500/60 uppercase">Base 50 + Buff</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center px-6">
-                <button onClick={onNextLesson} className={`px-8 py-5 md:px-12 md:py-6 text-white font-black rounded-[2rem] md:rounded-[2.5rem] text-[10px] md:text-[11px] font-orbitron uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${isApiEnabled ? 'bg-blue-600 hover:bg-blue-500' : 'bg-amber-600 hover:bg-amber-500'}`}>Advance to Next Layer</button>
-                <button onClick={onResultClose} className="px-8 py-5 md:px-12 md:py-6 glass hover:bg-white/5 text-slate-400 font-black rounded-[2rem] md:rounded-[2.5rem] text-[10px] md:text-[11px] font-orbitron uppercase tracking-widest border border-white/5 transition-all">Return to Command Hub</button>
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-6 justify-center px-8">
+                <button onClick={onNextLesson} className={`w-full sm:w-auto px-8 py-4 md:px-12 md:py-6 text-white font-black rounded-xl md:rounded-[2.5rem] text-[9px] md:text-[11px] font-orbitron uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${isApiEnabled ? 'bg-blue-600 hover:bg-blue-500' : 'bg-amber-600 hover:bg-amber-500'}`}>Advance to Next Layer</button>
+                <button onClick={onResultClose} className="w-full sm:w-auto px-8 py-4 md:px-12 md:py-6 glass hover:bg-white/5 text-slate-400 font-black rounded-xl md:rounded-[2.5rem] text-[9px] md:text-[11px] font-orbitron uppercase tracking-widest border border-white/5 transition-all">Command Hub</button>
               </div>
             </div>
           )}

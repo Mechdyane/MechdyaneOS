@@ -57,21 +57,38 @@ const MindMapper: React.FC = () => {
     setViewTransform({ x: tx, y: ty, k: scale });
   };
 
-  const addNode = () => {
-    // Place new node in the center of current view
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const centerX = (rect.width / 2 - viewTransform.x) / viewTransform.k;
-    const centerY = (rect.height / 2 - viewTransform.y) / viewTransform.k;
-
+  const createNodeAt = (worldX: number, worldY: number) => {
     const newNode: MindMapNode = {
       id: `node-${Date.now()}`,
       text: 'New Idea',
-      x: centerX - 80,
-      y: centerY - 40,
+      x: worldX - 80, // Center the 160px wide node
+      y: worldY - 40, // Center roughly vertically
       color: 'text-slate-300'
     };
-    setNodes([...nodes, newNode]);
+    setNodes(prev => [...prev, newNode]);
+  };
+
+  const handleCanvasDoubleClick = (e: React.MouseEvent) => {
+    if (!containerRef.current || linkMode) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    
+    // Calculate world coordinates from click location
+    const localX = e.clientX - rect.left;
+    const localY = e.clientY - rect.top;
+    
+    const worldX = (localX - viewTransform.x) / viewTransform.k;
+    const worldY = (localY - viewTransform.y) / viewTransform.k;
+
+    createNodeAt(worldX, worldY);
+  };
+
+  const addNode = () => {
+    // Legacy toolbar behavior: Place new node in the center of current view
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const worldCenterX = (rect.width / 2 - viewTransform.x) / viewTransform.k;
+    const worldCenterY = (rect.height / 2 - viewTransform.y) / viewTransform.k;
+    createNodeAt(worldCenterX, worldCenterY);
   };
 
   const deleteNode = (id: string) => {
@@ -145,7 +162,7 @@ const MindMapper: React.FC = () => {
         <button 
           onClick={addNode}
           className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-lg active:scale-95"
-          title="Add Thought Node"
+          title="Add Thought Node (Center View)"
         >
           <i className="fas fa-plus"></i>
         </button>
@@ -185,7 +202,11 @@ const MindMapper: React.FC = () => {
       </div>
 
       {/* Canvas Area */}
-      <div ref={containerRef} className="flex-1 relative cursor-crosshair overflow-hidden">
+      <div 
+        ref={containerRef} 
+        onDoubleClick={handleCanvasDoubleClick}
+        className="flex-1 relative cursor-crosshair overflow-hidden"
+      >
         <div 
           style={{ 
             transform: `translate(${viewTransform.x}px, ${viewTransform.y}px) scale(${viewTransform.k})`,
@@ -230,6 +251,7 @@ const MindMapper: React.FC = () => {
             <div
               key={node.id}
               onPointerDown={(e) => handlePointerDown(e, node.id)}
+              onDoubleClick={(e) => e.stopPropagation()} // Prevent creating node on top of another
               style={{ 
                 left: node.x, 
                 top: node.y,
@@ -273,6 +295,10 @@ const MindMapper: React.FC = () => {
              </div>
           </div>
         )}
+
+        <div className="absolute bottom-6 left-6 text-[9px] font-black text-slate-500 uppercase tracking-widest pointer-events-none bg-[#020617]/40 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/5">
+          Double-click canvas to spawn node
+        </div>
       </div>
 
       <style>{`
