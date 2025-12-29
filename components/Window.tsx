@@ -28,7 +28,6 @@ const Window: React.FC<WindowProps> = ({
     width: isMobile ? window.innerWidth : 800, 
     height: isMobile ? window.innerHeight - 56 : 550 
   });
-  const [scale, setScale] = useState(1);
   
   const isDragging = useRef(false);
   const resizeDir = useRef<string | null>(null);
@@ -49,15 +48,6 @@ const Window: React.FC<WindowProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || isMobile) {
-      e.preventDefault();
-      const delta = -e.deltaY;
-      const factor = Math.pow(1.1, delta / 120);
-      setScale(prev => Math.max(0.4, Math.min(2.0, prev * factor)));
-    }
-  };
 
   const handlePointerDown = (e: React.PointerEvent) => {
     onFocus();
@@ -140,13 +130,12 @@ const Window: React.FC<WindowProps> = ({
 
   const getWindowTransform = () => {
     if (isMinimized) {
-      // Retract window to the bottom taskbar with a shrink effect
       return `translate(${pos.x}px, 110vh) scale(0.1) rotateX(45deg)`;
     }
     if (isMaximized || isMobile) {
-      return `translate(0, 0) scale(${scale})`;
+      return `translate(0, 0)`;
     }
-    return `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
+    return `translate(${pos.x}px, ${pos.y}px)`;
   };
 
   const windowStyle: React.CSSProperties = {
@@ -170,7 +159,6 @@ const Window: React.FC<WindowProps> = ({
   return (
     <div 
       ref={windowRef}
-      onWheel={handleWheel}
       className={`glass shadow-2xl absolute flex flex-col overflow-hidden select-none border-white/10 ${
         isActive ? 'ring-2 ring-blue-500/40' : ''
       } ${isMobile ? 'border-none' : 'border'}`}
@@ -214,15 +202,6 @@ const Window: React.FC<WindowProps> = ({
         </div>
         
         <div className="flex items-center gap-2 shrink-0 ml-2">
-          {scale !== 1 && (
-            <button 
-              onClick={() => setScale(1)}
-              className="px-2 py-1 rounded-lg bg-blue-600/10 text-[7px] font-black text-blue-400 uppercase tracking-widest border border-blue-500/20 hover:bg-blue-600/20 transition-all"
-            >
-              RESET: {Math.round(scale * 100)}%
-            </button>
-          )}
-          
           <div className="flex items-center gap-1">
             {!isMobile && (
               <>

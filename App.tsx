@@ -74,7 +74,6 @@ const App: React.FC = () => {
   const [isStartOpen, setIsStartOpen] = useState(false);
   const [maxZ, setMaxZ] = useState(100);
   const [rewardToasts, setRewardToasts] = useState<RewardToast[]>([]);
-  const [ascensionData, setAscensionData] = useState<{ level: number, credits: number } | null>(null);
 
   // --- LEARNING ENGINE ---
   const [activeLearningModuleId, setActiveLearningModuleId] = useState<string | null>(null);
@@ -102,21 +101,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const allWindows = Object.values(windows) as WindowState[];
     const openWindows = allWindows.filter(w => w.isOpen);
-    
     const anyMaximized = openWindows.some(w => w.isMaximized);
     const nonDashFocused = activeApp && activeApp !== 'dashboard';
-    
-    // Condition to hide sidebar: Maximize or focused on task while other windows exist
     const shouldHide = anyMaximized || (nonDashFocused && openWindows.length > 0);
-    
-    // Condition to restore sidebar: Workspace is clear (all open windows are minimized or no open windows)
     const isWorkspaceClear = openWindows.length === 0 || openWindows.every(w => w.isMinimized);
 
-    if (shouldHide && !isSidebarHidden) {
-      setIsSidebarHidden(true);
-    } else if (isWorkspaceClear && isSidebarHidden) {
-      setIsSidebarHidden(false);
-    }
+    if (shouldHide && !isSidebarHidden) setIsSidebarHidden(true);
+    else if (isWorkspaceClear && isSidebarHidden) setIsSidebarHidden(false);
   }, [windows, activeApp, isSidebarHidden]);
 
   // --- REWARDS ---
@@ -134,14 +125,7 @@ const App: React.FC = () => {
 
     setUser(prev => {
       const nextTotalXp = prev.xp + xpGain;
-      const nextLevel = Math.floor(nextTotalXp / 1000) + 1;
-      let updatedUser = { ...prev, xp: nextTotalXp, credits: prev.credits + creditGain };
-      if (nextLevel > prev.level) {
-        const bonus = nextLevel * 100;
-        setAscensionData({ level: nextLevel, credits: bonus });
-        updatedUser = { ...updatedUser, level: nextLevel, credits: updatedUser.credits + bonus };
-      }
-      return updatedUser;
+      return { ...prev, xp: nextTotalXp, credits: prev.credits + creditGain, level: Math.floor(nextTotalXp / 1000) + 1 };
     });
   };
 
@@ -197,6 +181,9 @@ const App: React.FC = () => {
 
   const loadLessonContent = async (mod: LearningModule) => {
     setLearningStep('loading');
+    setCurrentQuizIndex(0);
+    setLessonScore(0);
+    setQuizSelection(null);
     try {
       const dynamicData = await generateDynamicLessonContent(mod.title, mod.lessonsFinished + 1, user.level);
       setDynamicMilestone(dynamicData);
@@ -249,7 +236,7 @@ const App: React.FC = () => {
             return win.isOpen && (
               <Window key={win.id} {...win} isActive={activeApp === win.id} onClose={() => closeApp(win.id)} onFocus={() => focusApp(win.id)} onMinimize={() => setWindows(p => ({...p, [win.id]: {...p[win.id], isMinimized: true}}))} onMaximize={() => setWindows(p => ({...p, [win.id]: {...p[win.id], isMaximized: !p[win.id].isMaximized}}))}>
                 {mod ? (
-                  <LearningEngineOverlay module={mod} milestone={dynamicMilestone} step={learningStep} currentQuizIndex={currentQuizIndex} currentScore={lessonScore} onClose={() => closeApp(win.id)} onNextStep={() => setLearningStep('quiz')} onQuizSelect={setQuizSelection} onCheckAnswer={handleCheckAnswer} onNextLesson={() => loadLessonContent(mod)} onResultClose={() => closeApp(mod.id)} selectedAnswer={quizSelection} feedback={quizFeedback} />
+                  <LearningEngineOverlay user={user} module={mod} milestone={dynamicMilestone} step={learningStep} currentQuizIndex={currentQuizIndex} currentScore={lessonScore} onClose={() => closeApp(win.id)} onNextStep={() => setLearningStep('quiz')} onQuizSelect={setQuizSelection} onCheckAnswer={handleCheckAnswer} onNextLesson={() => loadLessonContent(mod)} onResultClose={() => closeApp(mod.id)} selectedAnswer={quizSelection} feedback={quizFeedback} />
                 ) : (
                   <>
                     {win.id === 'dashboard' && <Dashboard user={user} modules={modules} inventory={inventory} onLaunchQuest={(id) => openApp(id)} onEnroll={(id) => setModules(m => m.map(item => item.id === id ? {...item, isEnrolled: true} : item))} onMinimize={() => setWindows(prev => ({...prev, dashboard: {...prev.dashboard, isMinimized: true}}))} isApiEnabled={isApiEnabled} yielded={win.isMinimized} />}
@@ -304,15 +291,168 @@ const App: React.FC = () => {
   );
 };
 
-const LearningEngineOverlay: React.FC<any> = ({ module, milestone, step, currentQuizIndex, currentScore, onClose, onNextStep, onQuizSelect, onCheckAnswer, onNextLesson, onResultClose, selectedAnswer, feedback }) => {
-  if (step === 'loading') return <div className="h-full flex flex-col items-center justify-center p-12 bg-[#020617]/80 text-center backdrop-blur-xl"><div className="w-20 h-20 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin mb-6"></div><h3 className="text-xl font-black text-white font-orbitron uppercase">Neural Synthesis...</h3></div>;
-  if (step === 'lesson') return <div className="h-full flex flex-col bg-[#020617]/60 overflow-y-auto p-12 space-y-10"><header className="space-y-4"><span className="px-3 py-1 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-full text-[8px] font-black uppercase font-orbitron tracking-widest">Layer {module.lessonsFinished + 1} / 12</span><h1 className="text-5xl font-black text-white font-orbitron uppercase tracking-tighter leading-none">{milestone?.title}</h1></header><div className="bg-slate-900/60 p-10 rounded-[2.5rem] border border-white/5 text-slate-300 text-lg leading-relaxed whitespace-pre-wrap font-medium">{milestone?.content}</div><div className="p-10 bg-slate-900/80 border-t border-white/10 flex justify-end gap-6"><button onClick={onClose} className="px-10 py-4 bg-white/5 text-slate-500 rounded-2xl text-[10px] uppercase font-black tracking-widest">Abort Link</button><button onClick={onNextStep} className="px-16 py-5 bg-blue-600 text-white rounded-2xl text-[11px] uppercase font-black tracking-widest shadow-2xl font-orbitron">Initiate Mastery</button></div></div>;
+const LearningEngineOverlay: React.FC<any> = ({ user, module, milestone, step, currentQuizIndex, currentScore, onClose, onNextStep, onQuizSelect, onCheckAnswer, onNextLesson, onResultClose, selectedAnswer, feedback }) => {
+  // Common calculation for level progress
+  const progressInLevel = user.xp % 1000;
+  const xpPercentage = Math.min(100, (progressInLevel / 1000) * 100);
+
+  if (step === 'loading') return (
+    <div className="h-full flex flex-col items-center justify-center p-8 md:p-12 bg-[#020617]/90 text-center backdrop-blur-2xl">
+      <div className="relative mb-12 group">
+        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-blue-500/10 flex items-center justify-center relative">
+          <i className="fas fa-bolt-lightning text-4xl md:text-6xl text-blue-500 animate-pulse drop-shadow-[0_0_20px_rgba(59,130,246,0.8)]"></i>
+          <div className="absolute inset-0 rounded-full border-t-4 border-blue-400 animate-spin"></div>
+        </div>
+        <div className="absolute -inset-8 bg-blue-500/10 blur-[60px] rounded-full animate-pulse"></div>
+      </div>
+      
+      <h3 className="text-2xl md:text-3xl font-black text-white font-orbitron uppercase tracking-[0.2em] leading-none mb-10">Curriculum Synthesis</h3>
+      
+      {/* Level Progress during loading */}
+      <div className="w-full max-w-sm space-y-4 bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+        <div className="flex justify-between items-end">
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Rank {user.level} Sync</span>
+          <span className="text-xs font-black text-blue-400 font-orbitron">{progressInLevel} / 1000 XP</span>
+        </div>
+        <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-white/5 relative">
+          <div 
+            className="h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,1)] transition-all duration-1000 ease-out" 
+            style={{ width: `${xpPercentage}%` }}
+          >
+            <div className="absolute inset-0 shimmer-effect opacity-50"></div>
+          </div>
+        </div>
+        <p className="text-[8px] font-bold text-slate-600 uppercase tracking-[0.5em] animate-pulse pt-2">Establishing Link with Core AI...</p>
+      </div>
+    </div>
+  );
+  
+  if (step === 'lesson') return (
+    <div className="h-full flex flex-col bg-[#020617]/60 overflow-y-auto p-4 md:p-12 space-y-6 md:space-y-10">
+      <header className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-full text-[7px] md:text-[8px] font-black uppercase font-orbitron tracking-widest">Layer {module.lessonsFinished + 1} / 12</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+        </div>
+        <h1 className="text-2xl md:text-5xl font-black text-white font-orbitron uppercase tracking-tighter leading-tight">{milestone?.title}</h1>
+      </header>
+      <div className="bg-slate-900/60 p-5 md:p-10 rounded-2xl md:rounded-[2.5rem] border border-white/5 text-slate-300 text-sm md:text-lg leading-relaxed whitespace-pre-wrap font-medium">
+        {milestone?.content}
+      </div>
+      <div className="p-4 md:p-10 bg-slate-900/80 border-t border-white/10 flex flex-col md:flex-row justify-end gap-3 md:gap-6 mt-auto">
+        <button onClick={onClose} className="w-full md:w-auto px-6 md:px-10 py-3 md:py-4 bg-white/5 text-slate-500 rounded-xl md:rounded-2xl text-[9px] md:text-[10px] uppercase font-black tracking-widest">Abort Link</button>
+        <button onClick={onNextStep} className="w-full md:w-auto px-8 md:px-16 py-4 md:py-5 bg-blue-600 text-white rounded-xl md:rounded-2xl text-[10px] md:text-[11px] uppercase font-black tracking-widest shadow-2xl font-orbitron">Initiate Mastery</button>
+      </div>
+    </div>
+  );
+
   if (step === 'quiz') {
     const q = milestone?.quizzes?.[currentQuizIndex];
     if (!q) return null;
-    return <div className="h-full flex flex-col items-center justify-center p-12 space-y-12"><header className="text-center"><p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] mb-4 font-orbitron">Verification Step {currentQuizIndex + 1}/5</p><h2 className="text-3xl font-black text-white font-orbitron uppercase max-w-2xl leading-tight text-center">{q.question}</h2></header><div className="grid grid-cols-1 gap-4 w-full max-w-xl">{q.options.map((opt: any) => (<button key={opt.letter} onClick={() => onQuizSelect(opt.letter)} className={`p-6 rounded-[2rem] border transition-all text-left flex items-center gap-6 ${selectedAnswer === opt.letter ? 'bg-blue-600 border-blue-500 text-white shadow-xl scale-[1.02]' : 'bg-slate-900/60 border-white/5 text-slate-400 hover:border-white/20'}`}><div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center font-black font-orbitron text-lg">{opt.letter}</div><span className="font-bold text-base">{opt.text}</span></button>))}</div><button onClick={onCheckAnswer} disabled={!selectedAnswer || !!feedback} className="px-24 py-6 bg-blue-600 text-white rounded-[2.5rem] text-xs font-black uppercase tracking-widest font-orbitron disabled:opacity-30 shadow-2xl">Confirm Selection</button></div>;
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-4 md:p-8 space-y-6 md:space-y-10 overflow-y-auto custom-scrollbar">
+        <header className="text-center px-4 max-w-4xl">
+          <p className="text-[10px] md:text-[11px] font-black text-blue-500 uppercase tracking-[0.4em] md:tracking-[0.5em] mb-2 md:mb-4 font-orbitron">Verification Step {currentQuizIndex + 1}/5</p>
+          <h2 className="text-lg md:text-3xl font-black text-white font-orbitron uppercase leading-snug md:leading-tight text-center tracking-tight drop-shadow-lg">{q.question}</h2>
+        </header>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 w-full max-w-5xl px-4">
+          {q.options.map((opt: any) => (
+            <button 
+              key={opt.letter} 
+              onClick={() => onQuizSelect(opt.letter)} 
+              className={`p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border transition-all text-left flex items-center gap-4 md:gap-8 relative overflow-hidden group/opt ${
+                selectedAnswer === opt.letter 
+                  ? 'bg-blue-600/20 border-blue-500 text-white shadow-[0_0_40px_rgba(59,130,246,0.15)] ring-2 ring-blue-500/50' 
+                  : 'bg-slate-900/60 border-white/10 text-slate-400 hover:border-white/30 hover:bg-slate-900/80 hover:scale-[1.01]'
+              }`}
+            >
+              <div className={`w-10 h-10 md:w-14 md:h-14 rounded-2xl md:rounded-[1.5rem] flex items-center justify-center font-black font-orbitron text-base md:text-xl shrink-0 transition-colors ${
+                selectedAnswer === opt.letter ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-600 group-hover/opt:text-blue-400'
+              }`}>
+                {opt.letter}
+              </div>
+              <span className={`font-bold text-xs md:text-lg leading-snug transition-colors ${
+                selectedAnswer === opt.letter ? 'text-white' : 'group-hover/opt:text-slate-200'
+              }`}>{opt.text}</span>
+              
+              {selectedAnswer === opt.letter && (
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-blue-500/30 text-2xl md:text-4xl">
+                  <i className="fas fa-check-circle"></i>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+        <button 
+          onClick={onCheckAnswer} 
+          disabled={!selectedAnswer || !!feedback} 
+          className="w-full max-w-xs md:max-w-sm px-10 md:px-16 py-4 md:py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl md:rounded-[2.5rem] text-[10px] md:text-xs font-black uppercase tracking-[0.2em] font-orbitron disabled:opacity-20 shadow-[0_15px_40px_rgba(59,130,246,0.25)] transition-all active:scale-95 mb-6"
+        >
+          {feedback === 'correct' ? 'Link Synchronized' : feedback === 'incorrect' ? 'Retrying Link...' : 'Confirm Selection'}
+        </button>
+      </div>
+    );
   }
-  if (step === 'result') return <div className="h-full flex items-center justify-center bg-[#020617]/80"><div className="bg-slate-900/90 p-16 rounded-[3.5rem] border-2 border-white/10 text-center space-y-10 max-w-lg w-full shadow-2xl"><div className={`w-28 h-28 rounded-[2.5rem] mx-auto flex items-center justify-center text-5xl text-white ${currentScore >= 4 ? 'bg-emerald-600 shadow-emerald-500/40' : 'bg-red-600 shadow-red-500/40'}`}><i className={`fas ${currentScore >= 4 ? 'fa-shield-check' : 'fa-skull-crossbones'}`}></i></div><h1 className="text-4xl font-black text-white font-orbitron uppercase tracking-tighter">{currentScore >= 4 ? 'Link Verified' : 'Neural Rejection'}</h1><div className="flex flex-col gap-4"><button onClick={currentScore >= 4 ? onNextLesson : onClose} className="w-full py-6 bg-blue-600 text-white rounded-3xl font-black text-xs uppercase tracking-widest font-orbitron shadow-2xl transition-all hover:scale-105 active:scale-95">{currentScore >= 4 ? 'Advance Layer' : 'Retry Node'}</button><button onClick={onResultClose} className="text-[10px] font-black text-slate-600 hover:text-white uppercase tracking-widest transition-colors font-orbitron">Return to Operational Hub</button></div></div></div>;
+
+  if (step === 'result') {
+    const isSuccess = currentScore >= 4;
+    return (
+      <div className="h-full flex items-center justify-center p-4 bg-[#020617]/95 backdrop-blur-3xl overflow-y-auto custom-scrollbar">
+        <div className="bg-[#0f172a]/90 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] border-2 border-white/10 text-center space-y-6 md:space-y-10 max-w-lg w-full shadow-[0_0_100px_rgba(0,0,0,0.8)] relative overflow-hidden my-4">
+          
+          {/* Neural Badge Visualization */}
+          <div className="relative group">
+            <div className={`w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] mx-auto flex items-center justify-center text-4xl md:text-6xl text-white relative transition-all duration-1000 ${isSuccess ? 'bg-gradient-to-tr from-emerald-500 to-blue-600 shadow-[0_0_40px_rgba(16,185,129,0.4)] rotate-0' : 'bg-red-600 shadow-red-500/40 rotate-12'}`}>
+              <i className={`fas ${isSuccess ? 'fa-certificate' : 'fa-skull-crossbones'} ${isSuccess ? 'animate-pulse' : ''}`}></i>
+              {isSuccess && <div className="absolute inset-0 rounded-[2.5rem] border-2 border-white/40 animate-ping"></div>}
+            </div>
+            {isSuccess && (
+              <div className="mt-4 animate-in slide-in-from-bottom-4">
+                <span className="text-[9px] md:text-[11px] font-black text-emerald-400 uppercase tracking-[0.4em] font-orbitron drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">Neural Badge Decoded</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-4xl font-black text-white font-orbitron uppercase tracking-tighter leading-none">{isSuccess ? 'Link Verified' : 'Sync Denied'}</h1>
+            <p className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{isSuccess ? 'Synaptic integration established successfully' : 'Incomplete neural alignment detected'}</p>
+          </div>
+
+          {/* Level Progress Display with XP gain */}
+          <div className="bg-white/5 p-6 md:p-8 rounded-[2rem] border border-white/5 space-y-4 shadow-inner">
+            <div className="flex justify-between items-end">
+              <div className="text-left">
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest font-orbitron mb-1">Rank {user.level} Trajectory</p>
+                <p className="text-xs md:text-sm font-black text-white font-orbitron">{progressInLevel} <span className="text-slate-700 text-[10px]">/ 1000 XP</span></p>
+              </div>
+              <div className="text-right">
+                <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest font-orbitron animate-bounce ${isSuccess ? 'text-blue-400' : 'text-red-500'}`}>
+                  {isSuccess ? '+150 XP GAINED' : '0 XP'}
+                </p>
+              </div>
+            </div>
+            <div className="w-full h-2 md:h-3 bg-slate-900/80 rounded-full overflow-hidden border border-white/5 relative">
+              <div 
+                className="h-full bg-blue-500 transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(59,130,246,1)] relative"
+                style={{ width: `${xpPercentage}%` }}
+              >
+                <div className="absolute inset-0 shimmer-effect opacity-30"></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 md:gap-4">
+            <button onClick={isSuccess ? onNextLesson : onClose} className="w-full py-5 md:py-6 bg-blue-600 text-white rounded-2xl md:rounded-[2rem] font-black text-[10px] md:text-xs uppercase tracking-[0.2em] font-orbitron shadow-2xl transition-all hover:scale-105 active:scale-95 hover:bg-blue-500">
+              {isSuccess ? 'Advance Layer' : 'Retry Verification'}
+            </button>
+            <button onClick={onResultClose} className="text-[9px] font-black text-slate-600 hover:text-white uppercase tracking-[0.4em] transition-colors font-orbitron py-1.5">
+              TERMINATE SESSION
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return null;
 };
 
