@@ -127,6 +127,40 @@ const App: React.FC = () => {
     document.documentElement.style.setProperty('--pulse-speed', effectivePulse.toString());
   }, [isApiEnabled, synapticPulse]);
 
+  /**
+   * SMART YIELD LOGIC:
+   * Dashboard auto-minimizes when other windows are active to clear the workspace.
+   * Dashboard auto-restores when all other windows are closed or minimized.
+   */
+  useEffect(() => {
+    // FIX: Cast Object.values(windows) to WindowState[] to ensure property access works on filtered elements
+    const windowList = Object.values(windows) as WindowState[];
+    const dash = windows['dashboard'];
+    
+    // Count other active (visible) windows
+    const otherVisibleWindowsCount = windowList.filter(
+      w => w.id !== 'dashboard' && w.isOpen && !w.isMinimized
+    ).length;
+
+    if (dash && dash.isOpen) {
+      if (otherVisibleWindowsCount > 0 && !dash.isMinimized && activeApp !== 'dashboard') {
+        // Auto-Yield: Minimize dashboard if something else is being used
+        setWindows(prev => ({
+          ...prev,
+          dashboard: { ...prev.dashboard, isMinimized: true }
+        }));
+      } else if (otherVisibleWindowsCount === 0 && dash.isMinimized) {
+        // Auto-Restore: Bring dashboard back if screen is clear
+        setWindows(prev => ({
+          ...prev,
+          dashboard: { ...prev.dashboard, isMinimized: false, zIndex: maxZ + 1 }
+        }));
+        setMaxZ(z => z + 1);
+        setActiveApp('dashboard');
+      }
+    }
+  }, [windows, activeApp]); // Run whenever window states or focus changes
+
   const loadLessonContent = async (mod: LearningModule) => {
     setCurrentQuizIndex(0);
     setLessonScore(0);
@@ -317,7 +351,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`h-screen w-screen bg-[#020617] text-slate-100 flex flex-row font-sans overflow-hidden transition-all duration-1000 ${focusMode ? 'grayscale-[0.6] brightness-[0.7] sepia-[0.1]' : ''} ${!isApiEnabled ? 'saturate-[0.8] contrast-[1.05]' : ''}`}>
+    <div className={`h-screen w-screen bg-[#020617] text-slate-100 flex flex-col md:flex-row font-sans overflow-hidden transition-all duration-1000 ${focusMode ? 'grayscale-[0.6] brightness-[0.7] sepia-[0.1]' : ''} ${!isApiEnabled ? 'saturate-[0.8] contrast-[1.05]' : ''}`}>
       {/* Background Layers */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         {wallpaper !== 'os-grid' && (
@@ -331,8 +365,8 @@ const App: React.FC = () => {
 
       <Sidebar onLaunch={openApp} user={user} activeApp={activeApp} />
 
-      <div className="flex-1 flex flex-col relative h-screen overflow-hidden">
-        <main className="relative flex-1 z-10 p-4 md:p-6 h-[calc(100vh-48px)] overflow-hidden">
+      <div className="flex-1 flex flex-col relative h-full overflow-hidden w-full">
+        <main className="relative flex-1 z-10 p-2 md:p-6 h-[calc(100vh-56px)] overflow-hidden">
           <Desktop installedAppIds={installedAppIds} onIconClick={(id) => openApp(id)} />
           
           {(Object.values(windows) as WindowState[]).map(win => {
@@ -385,15 +419,15 @@ const App: React.FC = () => {
           })}
 
           {newBadge && (
-            <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[100000] animate-in slide-in-from-top duration-700">
-               <div className="bg-amber-600/90 border border-amber-400 p-6 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.4)] flex items-center gap-6 backdrop-blur-xl">
-                  <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-3xl text-white border border-white/30">
+            <div className="fixed top-4 md:top-12 left-1/2 -translate-x-1/2 z-[100000] animate-in slide-in-from-top duration-700 w-[90%] md:w-auto">
+               <div className="bg-amber-600/90 border border-amber-400 p-4 md:p-6 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.4)] flex items-center gap-4 md:gap-6 backdrop-blur-xl">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-white/20 flex items-center justify-center text-xl md:text-3xl text-white border border-white/30">
                      <i className={`fas ${newBadge.icon}`}></i>
                   </div>
                   <div>
-                     <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60 mb-1">Trophy Room Update</h3>
-                     <h2 className="text-xl font-black text-white uppercase font-orbitron">{newBadge.title}</h2>
-                     <p className="text-[11px] text-white/80 font-medium">Achievement Unlocked & Synced</p>
+                     <h3 className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.4em] text-white/60 mb-1">Trophy Room Update</h3>
+                     <h2 className="text-sm md:text-xl font-black text-white uppercase font-orbitron">{newBadge.title}</h2>
+                     <p className="text-[9px] md:text-[11px] text-white/80 font-medium">Achievement Unlocked & Synced</p>
                   </div>
                </div>
             </div>
@@ -401,10 +435,10 @@ const App: React.FC = () => {
 
           {enrollmentSuccessTitle && (
             <div className="fixed inset-0 z-[100000] pointer-events-none flex items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-              <div className="bg-[#020617]/90 border-2 border-emerald-500/50 p-12 rounded-[3.5rem] shadow-[0_0_120px_rgba(16,185,129,0.3)] text-center backdrop-blur-2xl">
-                <i className="fas fa-satellite-dish text-5xl text-emerald-400 animate-pulse mb-6 block"></i>
-                <h2 className="text-emerald-500 uppercase tracking-[0.5em] font-orbitron text-[10px] mb-2">Neural Node Activated</h2>
-                <h1 className="text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{enrollmentSuccessTitle}</h1>
+              <div className="bg-[#020617]/90 border-2 border-emerald-500/50 p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] shadow-[0_0_120px_rgba(16,185,129,0.3)] text-center backdrop-blur-2xl max-w-[80%] md:max-w-none">
+                <i className="fas fa-satellite-dish text-3xl md:text-5xl text-emerald-400 animate-pulse mb-6 block"></i>
+                <h2 className="text-emerald-500 uppercase tracking-[0.5em] font-orbitron text-[8px] md:text-[10px] mb-2">Neural Node Activated</h2>
+                <h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{enrollmentSuccessTitle}</h1>
               </div>
             </div>
           )}
@@ -457,14 +491,14 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
 }) => {
   if (step === 'loading') {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 space-y-8 bg-[#020617]/80 backdrop-blur-xl">
+      <div className="h-full flex flex-col items-center justify-center p-12 space-y-8 bg-[#020617]/80 backdrop-blur-xl text-center">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div>
-          <i className="fas fa-brain absolute inset-0 flex items-center justify-center text-2xl text-blue-400 animate-pulse"></i>
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div>
+          <i className="fas fa-brain absolute inset-0 flex items-center justify-center text-xl md:text-2xl text-blue-400 animate-pulse"></i>
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-xl font-black text-white uppercase tracking-tighter font-orbitron">Neural Synthesis in Progress</h3>
-          <p className="text-[10px] text-blue-400 font-black uppercase tracking-[0.4em] animate-pulse">Hydrating Knowledge Node {module.lessonsFinished + 1}/12</p>
+          <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter font-orbitron">Neural Synthesis</h3>
+          <p className="text-[8px] md:text-[10px] text-blue-400 font-black uppercase tracking-[0.4em] animate-pulse">Hydrating Knowledge Node {module.lessonsFinished + 1}/12</p>
         </div>
       </div>
     );
@@ -472,14 +506,14 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
 
   if (step === 'error') {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 space-y-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-red-600/10 flex items-center justify-center text-red-500 border border-red-500/20">
-          <i className="fas fa-triangle-exclamation text-3xl"></i>
+      <div className="h-full flex flex-col items-center justify-center p-8 md:p-12 space-y-6 text-center">
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-600/10 flex items-center justify-center text-red-500 border border-red-500/20">
+          <i className="fas fa-triangle-exclamation text-2xl md:text-3xl"></i>
         </div>
-        <h3 className="text-xl font-black text-white uppercase tracking-tighter font-orbitron">Synaptic Fragmentation</h3>
-        <div className="flex gap-4">
-          <button onClick={onTriggerFallback} className="px-8 py-3 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">Manual Link</button>
-          <button onClick={onClose} className="px-8 py-3 bg-white/5 text-slate-500 font-black rounded-xl text-[10px] uppercase tracking-widest border border-white/5">Abort</button>
+        <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter font-orbitron">Synaptic Fragmentation</h3>
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 w-full md:w-auto">
+          <button onClick={onTriggerFallback} className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">Manual Link</button>
+          <button onClick={onClose} className="w-full md:w-auto px-8 py-3 bg-white/5 text-slate-500 font-black rounded-xl text-[10px] uppercase tracking-widest border border-white/5">Abort</button>
         </div>
       </div>
     );
@@ -488,41 +522,41 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
   if (step === 'lesson') {
     return (
       <div className="h-full flex flex-col bg-[#020617]/60">
-        <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar space-y-10 pb-32">
+        <div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar space-y-8 md:space-y-10 pb-32">
           <header className="space-y-4">
-            <span className="px-3 py-1 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-full text-[8px] font-black uppercase tracking-widest">
+            <span className="px-3 py-1 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest">
               Layer {module.lessonsFinished + 1} of 12
             </span>
-            <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter font-orbitron">
+            <h1 className="text-2xl md:text-5xl font-black text-white uppercase tracking-tighter font-orbitron leading-tight">
               {milestone?.title || 'Knowledge Acquisition'}
             </h1>
           </header>
-          <section className="bg-white/5 border border-white/5 rounded-3xl p-8 space-y-6">
-            <h3 className="text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron flex items-center gap-3">
+          <section className="bg-white/5 border border-white/5 rounded-3xl p-6 md:p-8 space-y-6">
+            <h3 className="text-[9px] md:text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron flex items-center gap-3">
               <i className="fas fa-bullseye"></i> Objectives
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {milestone?.objectives?.map((obj: string, i: number) => (
                 <div key={i} className="flex gap-4 p-4 rounded-2xl bg-slate-900/50 border border-white/5">
-                  <i className="fas fa-check-circle text-emerald-500 mt-1"></i>
+                  <i className="fas fa-check-circle text-emerald-500 mt-1 shrink-0"></i>
                   <p className="text-xs text-slate-300 font-medium leading-relaxed">{obj}</p>
                 </div>
               ))}
             </div>
           </section>
-          <div className="bg-slate-900/40 border border-white/5 p-8 rounded-[2.5rem] text-slate-300 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+          <div className="bg-slate-900/40 border border-white/5 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] text-slate-300 text-xs md:text-sm leading-relaxed whitespace-pre-wrap font-medium">
             {milestone?.content}
           </div>
-          <div className="bg-[#0f172a] border border-blue-500/20 p-8 rounded-[2.5rem] space-y-6">
-             <h3 className="text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron">Deep Dive</h3>
-             <div className="text-slate-400 text-sm leading-relaxed italic whitespace-pre-wrap font-medium">
+          <div className="bg-[#0f172a] border border-blue-500/20 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-6">
+             <h3 className="text-[9px] md:text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron">Deep Dive</h3>
+             <div className="text-slate-400 text-xs md:text-sm leading-relaxed italic whitespace-pre-wrap font-medium">
                 {milestone?.detailedNotes}
              </div>
           </div>
         </div>
-        <div className="p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex justify-end gap-4 sticky bottom-0">
-           <button onClick={onClose} className="px-10 py-4 bg-white/5 text-slate-400 font-black rounded-2xl text-[10px] uppercase tracking-widest border border-white/5">Abort</button>
-           <button onClick={onNextStep} className="px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/30 transition-all font-orbitron">
+        <div className="p-4 md:p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex flex-col md:flex-row justify-end gap-3 md:gap-4 sticky bottom-0">
+           <button onClick={onClose} className="w-full md:w-auto px-10 py-4 bg-white/5 text-slate-400 font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest border border-white/5">Abort</button>
+           <button onClick={onNextStep} className="w-full md:w-auto px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/30 transition-all font-orbitron">
               Verify Mastery
            </button>
         </div>
@@ -535,36 +569,36 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
     if (!currentQuiz) return null;
     return (
       <div className="h-full flex flex-col bg-[#020617]/60">
-        <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar space-y-12 flex flex-col items-center justify-center">
-          <div className="w-full max-w-2xl space-y-10">
+        <div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar space-y-8 md:space-y-12 flex flex-col items-center justify-center">
+          <div className="w-full max-w-2xl space-y-8 md:space-y-10">
             <header className="text-center space-y-4">
-              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.5em] font-orbitron">Layer Verification</p>
-              <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter font-orbitron leading-tight">
+              <p className="text-[8px] md:text-[10px] font-black text-blue-400 uppercase tracking-[0.5em] font-orbitron">Layer Verification</p>
+              <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter font-orbitron leading-tight">
                 {currentQuiz.question}
               </h2>
             </header>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3 md:gap-4">
               {currentQuiz.options.map((opt: any) => (
                 <button
                   key={opt.letter}
                   onClick={() => onQuizSelect(opt.letter)}
                   disabled={!!feedback}
                   className={`
-                    w-full flex items-center gap-6 p-6 rounded-[2rem] border transition-all text-left
+                    w-full flex items-center gap-4 md:gap-6 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border transition-all text-left
                     ${selectedAnswer === opt.letter 
                       ? (feedback === 'correct' ? 'bg-emerald-600/20 border-emerald-500' : (feedback === 'incorrect' ? 'bg-red-600/20 border-red-500' : 'bg-blue-600 border-blue-500 text-white')) 
                       : 'bg-slate-900/60 border-white/5 hover:border-white/20 text-slate-300'}
                   `}
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center font-black font-orbitron">{opt.letter}</div>
-                  <span className="text-sm font-bold">{opt.text}</span>
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center font-black font-orbitron shrink-0">{opt.letter}</div>
+                  <span className="text-xs md:text-sm font-bold">{opt.text}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
-        <div className="p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex justify-center">
-           <button onClick={onCheckAnswer} disabled={!selectedAnswer || !!feedback} className="w-full max-w-sm py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black rounded-3xl text-xs uppercase tracking-widest font-orbitron">
+        <div className="p-4 md:p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex justify-center">
+           <button onClick={onCheckAnswer} disabled={!selectedAnswer || !!feedback} className="w-full max-w-sm py-4 md:py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black rounded-[1.5rem] md:rounded-3xl text-xs uppercase tracking-widest font-orbitron">
              Lock In Entry
            </button>
         </div>
@@ -575,20 +609,20 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
   if (step === 'result') {
     const passed = currentScore >= 4;
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 bg-[#020617]/80 backdrop-blur-2xl">
-        <div className="w-full max-w-xl bg-slate-900/60 border border-white/10 rounded-[3.5rem] p-12 text-center space-y-10">
-          <div className={`w-24 h-24 rounded-[2rem] mx-auto flex items-center justify-center text-4xl ${passed ? 'bg-emerald-600' : 'bg-red-600'} text-white shadow-2xl`}>
+      <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 bg-[#020617]/80 backdrop-blur-2xl">
+        <div className="w-full max-w-xl bg-slate-900/60 border border-white/10 rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-12 text-center space-y-8 md:space-y-10">
+          <div className={`w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] md:rounded-[2rem] mx-auto flex items-center justify-center text-3xl md:text-4xl ${passed ? 'bg-emerald-600' : 'bg-red-600'} text-white shadow-2xl`}>
              <i className={`fas ${passed ? 'fa-medal' : 'fa-skull'}`}></i>
           </div>
           <div className="space-y-2">
-             <h1 className="text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{passed ? 'Mastery Verified' : 'Rejection'}</h1>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Score: {currentScore} / 5</p>
+             <h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{passed ? 'Mastery Verified' : 'Rejection'}</h1>
+             <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">Score: {currentScore} / 5</p>
           </div>
-          <div className="flex flex-col gap-4">
-             <button onClick={onNextLesson} className={`w-full py-5 ${passed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'} text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl font-orbitron`}>
+          <div className="flex flex-col gap-3 md:gap-4">
+             <button onClick={onNextLesson} className={`w-full py-4 md:py-5 ${passed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'} text-white font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl font-orbitron`}>
                {passed ? 'Advance Layer' : 'Retry Verification'}
              </button>
-             <button onClick={onResultClose} className="text-[9px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest">Dashboard</button>
+             <button onClick={onResultClose} className="text-[8px] md:text-[9px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest">Dashboard</button>
           </div>
         </div>
       </div>

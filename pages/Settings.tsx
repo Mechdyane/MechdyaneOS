@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 interface SettingsProps {
   wallpaper: string;
@@ -20,6 +20,7 @@ const Settings: React.FC<SettingsProps> = ({
 }) => {
   const [customUrl, setCustomUrl] = useState('');
   const [activeTab, setActiveTab] = useState<'visual' | 'system' | 'neural'>('visual');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const wallpapers = [
     { 
@@ -53,7 +54,18 @@ const Settings: React.FC<SettingsProps> = ({
     if (customUrl.trim()) {
       setWallpaper(customUrl.trim());
       setCustomUrl('');
-      alert("Custom Neural Link established.");
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setWallpaper(base64String);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -65,7 +77,7 @@ const Settings: React.FC<SettingsProps> = ({
           Fine-tune your operating environment and personal aesthetic parameters to maximize synaptic focus and cognitive efficiency.
         </p>
         
-        <div className="flex gap-4 mt-10">
+        <div className="flex gap-4 mt-10 overflow-x-auto no-scrollbar pb-2">
            {[
              { id: 'visual', label: 'Visual Interface', icon: 'fa-palette' },
              { id: 'system', label: 'Operational Hub', icon: 'fa-microchip' },
@@ -74,7 +86,7 @@ const Settings: React.FC<SettingsProps> = ({
              <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 ${
+              className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-3 whitespace-nowrap ${
                 activeTab === tab.id 
                   ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
                   : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300'
@@ -97,22 +109,22 @@ const Settings: React.FC<SettingsProps> = ({
             <p className="text-[10px] text-slate-600 font-black uppercase tracking-widest">Select your neural environment profile</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Native Pre-sets */}
             {wallpapers.map(wp => (
               <button
                 key={wp.id}
                 onClick={() => setWallpaper(wp.id)}
                 className={`flex flex-col rounded-[2rem] border transition-all text-left overflow-hidden group relative ${
                   wallpaper === wp.id 
-                    ? 'border-blue-500 ring-4 ring-blue-500/20' 
+                    ? 'border-blue-500 ring-4 ring-blue-500/20 shadow-[0_0_40px_rgba(59,130,246,0.2)]' 
                     : 'bg-slate-900/50 border-white/5 hover:border-white/10 shadow-xl'
                 }`}
               >
                 <div 
-                  className={`h-32 w-full transition-transform group-hover:scale-110 duration-1000 bg-cover bg-center relative ${wp.id.startsWith('http') ? '' : wp.preview}`}
-                  style={wp.id.startsWith('http') ? { backgroundImage: `url(${wp.id})` } : {}}
+                  className={`h-32 w-full transition-transform group-hover:scale-110 duration-1000 bg-cover bg-center relative ${wp.id.startsWith('http') || wp.id.startsWith('data:') ? '' : wp.preview}`}
+                  style={wp.id.startsWith('http') || wp.id.startsWith('data:') ? { backgroundImage: `url(${wp.id})` } : {}}
                 >
-                  {/* High contrast grid for native wallpaper thumbnail */}
                   {wp.id === 'os-grid' && (
                     <div className="absolute inset-0 os-grid opacity-30"></div>
                   )}
@@ -131,26 +143,59 @@ const Settings: React.FC<SettingsProps> = ({
                 </div>
               </button>
             ))}
+
+            {/* Local Upload Trigger */}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileUpload} 
+              className="hidden" 
+              accept="image/*"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col rounded-[2rem] border border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-blue-500/40 transition-all text-center items-center justify-center min-h-[180px] group"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-blue-400 group-hover:scale-110 transition-all mb-4">
+                <i className="fas fa-cloud-arrow-up text-xl"></i>
+              </div>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest font-orbitron group-hover:text-white transition-colors">Upload Local Asset</p>
+              <p className="text-[8px] text-slate-600 font-bold uppercase mt-2">JPG, PNG, GIF (Max 5MB)</p>
+            </button>
           </div>
 
-          <form onSubmit={handleCustomSubmit} className="glass p-8 rounded-[2rem] border border-white/5 space-y-4 shadow-2xl">
-             <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">External Neural Link (Custom URL)</p>
-                <i className="fas fa-link text-slate-600 text-xs"></i>
-             </div>
-             <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={customUrl}
-                  onChange={(e) => setCustomUrl(e.target.value)}
-                  placeholder="Paste high-fidelity environment URL..."
-                  className="flex-1 bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-[11px] focus:outline-none focus:border-blue-500/50 transition-all font-medium text-slate-300"
-                />
-                <button type="submit" className="px-8 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20">
-                  Sync
-                </button>
-             </div>
-          </form>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <form onSubmit={handleCustomSubmit} className="glass p-8 rounded-[2rem] border border-white/5 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">External Neural Link (Cloud URL)</p>
+                  <i className="fas fa-link text-slate-600 text-xs"></i>
+              </div>
+              <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={customUrl}
+                    onChange={(e) => setCustomUrl(e.target.value)}
+                    placeholder="Paste environment URL..."
+                    className="flex-1 bg-slate-950/50 border border-white/10 rounded-xl px-4 py-3 text-[11px] focus:outline-none focus:border-blue-500/50 transition-all font-medium text-slate-300"
+                  />
+                  <button type="submit" className="px-8 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20">
+                    Link
+                  </button>
+              </div>
+            </form>
+
+            <div className="glass p-8 rounded-[2rem] border border-white/5 flex items-center justify-between shadow-2xl">
+               <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-600/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                    <i className="fas fa-shield-check"></i>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Asset Status</p>
+                    <p className="text-xs text-slate-500 font-medium">Environment is currently synchronized and persisted to synaptic memory.</p>
+                  </div>
+               </div>
+            </div>
+          </div>
         </section>
       )}
 

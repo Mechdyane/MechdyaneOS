@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLaunch, user, activeApp }) => {
   ];
 
   return (
-    <aside className="w-16 md:w-64 glass h-screen sticky top-0 flex flex-col items-center py-6 border-r border-white/5 transition-all z-[10001] shrink-0">
+    <aside className="hidden md:flex w-64 glass h-screen sticky top-0 flex-col items-center py-6 border-r border-white/5 transition-all z-[10001] shrink-0">
       <div className="flex items-center gap-3 mb-10 px-4 cursor-pointer" onClick={() => onLaunch('os-helper')}>
         <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center glow-blue shadow-lg shadow-blue-500/20">
           <i className="fas fa-microchip text-xl text-white"></i>

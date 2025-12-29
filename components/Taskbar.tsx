@@ -50,21 +50,21 @@ const Taskbar: React.FC<TaskbarProps> = ({
   };
 
   return (
-    <div className="h-14 glass border-t border-white/10 flex items-center px-4 z-[9999] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] relative">
+    <div className="h-14 glass border-t border-white/10 flex items-center px-2 md:px-4 z-[9999] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] relative">
       <div className={`absolute bottom-0 left-0 h-[2px] transition-all duration-1000 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] w-full' : 'bg-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.8)] w-1/3'}`}></div>
 
       <button 
         onClick={handleStartClick}
-        className={`w-11 h-11 flex items-center justify-center rounded-xl text-white shadow-lg active:scale-90 hover:brightness-110 transition-all duration-200 overflow-hidden relative group ${isApiEnabled ? 'bg-blue-600' : 'bg-amber-600'}`}
+        className={`w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-xl text-white shadow-lg active:scale-90 hover:brightness-110 transition-all duration-200 overflow-hidden relative group shrink-0 ${isApiEnabled ? 'bg-blue-600' : 'bg-amber-600'}`}
         title="Mechdyane Start"
       >
         <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-        <i className={`fas fa-microchip text-lg ${isSpinning ? 'animate-spin-once' : ''}`}></i>
+        <i className={`fas fa-microchip text-base md:text-lg ${isSpinning ? 'animate-spin-once' : ''}`}></i>
       </button>
       
-      <div className="mx-4 h-8 w-px bg-white/10"></div>
+      <div className="mx-2 md:mx-4 h-8 w-px bg-white/10"></div>
       
-      <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1">
+      <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1 pr-4">
         {windows.map(win => {
           const isActive = activeApp === win.id;
           return (
@@ -73,18 +73,14 @@ const Taskbar: React.FC<TaskbarProps> = ({
                 onClick={() => onAppClick(win.id)}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
-                  // Minimize if the app is active, providing the requested "Double Click to Minimize" behavior
-                  if (isActive) {
-                    onMinimizeApp(win.id);
-                  }
+                  if (isActive) onMinimizeApp(win.id);
                 }}
                 className={`
-                  relative flex items-center gap-3 pl-4 pr-12 h-11 rounded-xl transition-all duration-500 group active:scale-95
+                  relative flex items-center gap-3 px-3 md:pl-4 md:pr-12 h-10 md:h-11 rounded-xl transition-all duration-500 group active:scale-95
                   ${isActive 
-                    ? 'bg-white/10 border border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] ring-1 ring-white/10' 
+                    ? 'bg-white/10 border border-white/10 ring-1 ring-white/10' 
                     : 'hover:bg-white/5 border border-transparent'}
                 `}
-                title={isActive ? "Double-click to Minimize" : `Switch to ${win.title}`}
               >
                 <i className={`
                   fas ${win.icon} transition-all duration-500
@@ -102,30 +98,27 @@ const Taskbar: React.FC<TaskbarProps> = ({
 
                 <div className={`
                   absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 rounded-full transition-all duration-700
-                  ${isActive ? `w-6 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
+                  ${isActive ? `w-4 md:w-6 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
                 `}></div>
               </button>
 
-              <button
+              {/* Taskbar Close Button */}
+              <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   onCloseApp(win.id);
                 }}
-                className={`
-                  absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center 
-                  transition-all duration-200 opacity-0 group-hover/item:opacity-100 hover:bg-red-500 text-white z-10
-                  ${isActive ? 'opacity-20' : ''}
-                `}
-                title="Terminate Process"
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-10 shadow-lg border border-white/20 hover:scale-110"
+                title={`Close ${win.title}`}
               >
-                <i className="fas fa-times text-[9px]"></i>
+                <i className="fas fa-times text-[7px]"></i>
               </button>
             </div>
           );
         })}
       </div>
 
-      <div className="flex items-center gap-6 ml-4">
+      <div className="flex items-center gap-2 md:gap-6 ml-auto">
         <div className="hidden lg:flex items-center gap-5 border-r border-white/5 pr-6">
            <div className="flex flex-col gap-1 items-end min-w-[60px]">
               <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none">Neural Load</p>
@@ -149,36 +142,34 @@ const Taskbar: React.FC<TaskbarProps> = ({
            </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button 
             onClick={onControlClick}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all border border-white/5 active:scale-90
               ${activeApp === 'control-panel' ? 'bg-white/10 text-white' : 'text-slate-500 hover:bg-white/5 hover:text-blue-400'}
             `}
-            title="Control Center"
           >
-            <i className="fas fa-sliders-h text-xs"></i>
+            <i className="fas fa-sliders-h text-[10px] md:text-xs"></i>
           </button>
 
           <button 
             onClick={onCalendarClick}
-            className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-white/5 active:scale-95
-                ${activeApp === 'calendar' ? 'bg-white/10 border-blue-500/30 ring-1 ring-blue-500/20' : 'hover:bg-white/5'}
+            className={`flex items-center gap-2 md:gap-3 px-2 md:px-3 py-1.5 rounded-xl transition-all border border-white/5 active:scale-95
+                ${activeApp === 'calendar' ? 'bg-white/10 border-blue-500/30' : 'hover:bg-white/5'}
             `}
-            title="Temporal Node (Calendar)"
           >
             <div className="text-right flex flex-col justify-center">
-              <p className="text-[11px] font-black text-slate-100 font-orbitron leading-none mb-0.5">
+              <p className="text-[9px] md:text-[11px] font-black text-slate-100 font-orbitron leading-none mb-0.5">
                 {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
               </p>
-              <p className="text-[7px] text-slate-500 font-black uppercase tracking-[0.2em] leading-none">
+              <p className="text-[6px] md:text-[7px] text-slate-500 font-black uppercase tracking-[0.2em] leading-none">
                 {time.toLocaleDateString([], { month: 'short', day: 'numeric' })}
               </p>
             </div>
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors
-                ${activeApp === 'calendar' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-slate-500'}
+            <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center transition-colors
+                ${activeApp === 'calendar' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-500'}
             `}>
-                <i className="fas fa-calendar-day text-[11px]"></i>
+                <i className="fas fa-calendar-day text-[10px] md:text-[11px]"></i>
             </div>
           </button>
         </div>
