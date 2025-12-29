@@ -23,6 +23,7 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import CourseCreator from './pages/CourseCreator';
 import OSHelper from './pages/OSHelper';
+import BountyBoard from './pages/BountyBoard';
 import { SOFTWARE_CATALOG, MODULES as INITIAL_MODULES, INITIAL_USER, INITIAL_ACHIEVEMENTS, INITIAL_INVENTORY } from './constants';
 import { AppId, LearningModule, UserState, Achievement, InventoryItem } from './types';
 import { generateDynamicLessonContent } from './services/geminiService';
@@ -85,47 +86,21 @@ const App: React.FC = () => {
   );
 
   const equippedItems = useMemo(() => inventory.filter(i => i.isEquipped), [inventory]);
-  
-  const xpMultiplier = useMemo(() => {
-    const hasLogicCore = equippedItems.some(i => i.name === 'Logic Core');
-    return hasLogicCore ? 1.1 : 1.0;
-  }, [equippedItems]);
+  const xpMultiplier = useMemo(() => equippedItems.some(i => i.name === 'Logic Core') ? 1.1 : 1.0, [equippedItems]);
+  const creditBonus = useMemo(() => equippedItems.some(i => i.name === 'Cyber Lens') ? 5 : 0, [equippedItems]);
 
-  const creditBonus = useMemo(() => {
-    const hasCyberLens = equippedItems.some(i => i.name === 'Cyber Lens');
-    return hasCyberLens ? 5 : 0;
-  }, [equippedItems]);
-
-  // Determine if Immersion mode should be active (hide sidebar)
   const isAnyWindowMaximized = useMemo(() => {
-    // Fixed: Explicitly cast Object.values(windows) to WindowState[] to fix property access on 'unknown' error
     return (Object.values(windows) as WindowState[]).some(w => w.isOpen && w.isMaximized && !w.isMinimized);
   }, [windows]);
 
-  useEffect(() => {
-    localStorage.setItem('mechdyane_user', JSON.stringify(user));
-  }, [user]);
-  useEffect(() => {
-    localStorage.setItem('mechdyane_achievements', JSON.stringify(achievements));
-  }, [achievements]);
-  useEffect(() => {
-    localStorage.setItem('mechdyane_inventory', JSON.stringify(inventory));
-  }, [inventory]);
-  useEffect(() => {
-    localStorage.setItem('mechdyane_modules', JSON.stringify(modules));
-  }, [modules]);
-  useEffect(() => {
-    localStorage.setItem('mechdyane_api_enabled', String(isApiEnabled));
-  }, [isApiEnabled]);
-  useEffect(() => {
-    localStorage.setItem('mechdyane_wallpaper', wallpaper);
-  }, [wallpaper]);
-  useEffect(() => {
-    localStorage.setItem('mechdyane_focus', String(focusMode));
-  }, [focusMode]);
-  useEffect(() => {
-    localStorage.setItem('mechdyane_pulse', String(synapticPulse));
-  }, [synapticPulse]);
+  useEffect(() => { localStorage.setItem('mechdyane_user', JSON.stringify(user)); }, [user]);
+  useEffect(() => { localStorage.setItem('mechdyane_achievements', JSON.stringify(achievements)); }, [achievements]);
+  useEffect(() => { localStorage.setItem('mechdyane_inventory', JSON.stringify(inventory)); }, [inventory]);
+  useEffect(() => { localStorage.setItem('mechdyane_modules', JSON.stringify(modules)); }, [modules]);
+  useEffect(() => { localStorage.setItem('mechdyane_api_enabled', String(isApiEnabled)); }, [isApiEnabled]);
+  useEffect(() => { localStorage.setItem('mechdyane_wallpaper', wallpaper); }, [wallpaper]);
+  useEffect(() => { localStorage.setItem('mechdyane_focus', String(focusMode)); }, [focusMode]);
+  useEffect(() => { localStorage.setItem('mechdyane_pulse', String(synapticPulse)); }, [synapticPulse]);
 
   useEffect(() => {
     const effectivePulse = isApiEnabled ? synapticPulse : synapticPulse * 0.2;
@@ -140,16 +115,10 @@ const App: React.FC = () => {
 
     if (dash && dash.isOpen) {
       if ((anyOtherMaximized || otherVisibleWindowsCount > 0) && !dash.isMinimized && activeApp !== 'dashboard') {
-        setWindows(prev => ({
-          ...prev,
-          dashboard: { ...prev.dashboard, isMinimized: true }
-        }));
+        setWindows(prev => ({ ...prev, dashboard: { ...prev.dashboard, isMinimized: true } }));
       } 
       else if (!anyOtherMaximized && otherVisibleWindowsCount === 0 && dash.isMinimized) {
-        setWindows(prev => ({
-          ...prev,
-          dashboard: { ...prev.dashboard, isMinimized: false, zIndex: maxZ + 1 }
-        }));
+        setWindows(prev => ({ ...prev, dashboard: { ...prev.dashboard, isMinimized: false, zIndex: maxZ + 1 } }));
         setMaxZ(z => z + 1);
         setActiveApp('dashboard');
       }
@@ -165,42 +134,27 @@ const App: React.FC = () => {
     if (!isApiEnabled) {
       setTimeout(() => {
         const localMilestone = mod.milestones[mod.lessonsFinished];
-        if (localMilestone) {
-          setDynamicMilestone(localMilestone);
-          setLearningStep('lesson');
-        } else {
-          setLearningStep('error');
-        }
+        if (localMilestone) { setDynamicMilestone(localMilestone); setLearningStep('lesson'); }
+        else { setLearningStep('error'); }
       }, 1500);
       return;
     }
 
     try {
         const dynamicData = await generateDynamicLessonContent(mod.title, lessonNum, user.level);
-        if (dynamicData) {
-          setDynamicMilestone(dynamicData);
-          setLearningStep('lesson');
-        } else {
-          throw new Error("Empty Response");
-        }
+        if (dynamicData) { setDynamicMilestone(dynamicData); setLearningStep('lesson'); }
+        else { throw new Error("Empty Response"); }
     } catch (e) {
         const localFallback = mod.milestones[mod.lessonsFinished];
-        if (localFallback) {
-          setDynamicMilestone(localFallback);
-          setLearningStep('lesson');
-        } else {
-          setLearningStep('error');
-        }
+        if (localFallback) { setDynamicMilestone(localFallback); setLearningStep('lesson'); }
+        else { setLearningStep('error'); }
     }
   };
 
   const handleManualFallback = () => {
     if (activeLearningModule) {
       const localMilestone = activeLearningModule.milestones[activeLearningModule.lessonsFinished];
-      if (localMilestone) {
-        setDynamicMilestone(localMilestone);
-        setLearningStep('lesson');
-      }
+      if (localMilestone) { setDynamicMilestone(localMilestone); setLearningStep('lesson'); }
     }
   };
 
@@ -209,52 +163,22 @@ const App: React.FC = () => {
     if (mod) {
       setActiveLearningModuleId(mod.id);
       setActiveApp(mod.id);
-      
       setWindows(prev => {
         const existing = prev[id];
         const newZ = maxZ + 1;
         setMaxZ(newZ);
-        if (existing && existing.isOpen) {
-          return { ...prev, [id]: { ...existing, isMinimized: false, zIndex: newZ } };
-        }
-        return {
-          ...prev,
-          [id]: {
-            id,
-            title: mod.title,
-            icon: mod.icon,
-            isOpen: true,
-            isMinimized: false,
-            isMaximized: false,
-            zIndex: newZ
-          }
-        };
+        if (existing && existing.isOpen) return { ...prev, [id]: { ...existing, isMinimized: false, zIndex: newZ } };
+        return { ...prev, [id]: { id, title: mod.title, icon: mod.icon, isOpen: true, isMinimized: false, isMaximized: false, zIndex: newZ } };
       });
-
       await loadLessonContent(mod);
       return;
     }
-
     setWindows(prev => {
       const existing = prev[id];
       const newZ = maxZ + 1;
       setMaxZ(newZ);
-      if (existing && existing.isOpen) {
-        setActiveApp(id);
-        return { ...prev, [id]: { ...existing, isMinimized: false, zIndex: newZ } };
-      }
-      return {
-        ...prev,
-        [id]: {
-          id,
-          title: title || SOFTWARE_CATALOG.find(a => a.id === id)?.name || id,
-          icon: icon || SOFTWARE_CATALOG.find(a => a.id === id)?.icon || 'fa-cube',
-          isOpen: true,
-          isMinimized: false,
-          isMaximized: false,
-          zIndex: newZ
-        }
-      };
+      if (existing && existing.isOpen) { setActiveApp(id); return { ...prev, [id]: { ...existing, isMinimized: false, zIndex: newZ } }; }
+      return { ...prev, [id]: { id, title: title || SOFTWARE_CATALOG.find(a => a.id === id)?.name || id, icon: icon || SOFTWARE_CATALOG.find(a => a.id === id)?.icon || 'fa-cube', isOpen: true, isMinimized: false, isMaximized: false, zIndex: newZ } };
     });
     setActiveApp(id);
     setIsStartOpen(false);
@@ -271,19 +195,15 @@ const App: React.FC = () => {
     if (activeApp === id) setActiveApp(null);
   };
 
-  const checkAchievements = (updatedUser: UserState) => {
+  const checkAchievements = (updatedUser: UserState, updatedModules: LearningModule[], currentLessonNum: number) => {
     setAchievements(prev => prev.map(ach => {
       if (ach.isUnlocked) return ach;
       let progress = ach.progress;
       let isUnlocked = false;
       if (ach.id === 'steady-flow') progress = updatedUser.streak;
-      if (ach.id === 'polymath') progress = modules.filter(m => m.progress >= 100).length;
-      if (ach.id === 'deep-dive') progress = updatedUser.lessonsFinished >= 1 ? 1 : 0;
-      if (progress >= ach.target) {
-        isUnlocked = true;
-        setNewBadge(ach);
-        setTimeout(() => setNewBadge(null), 5000);
-      }
+      else if (ach.id === 'polymath') progress = updatedModules.filter(m => m.progress >= 100).length;
+      else if (ach.id === 'deep-dive') { if (currentLessonNum >= 9) progress = 1; }
+      if (progress >= ach.target) { isUnlocked = true; setNewBadge(ach); setTimeout(() => setNewBadge(null), 5000); }
       return { ...ach, progress, isUnlocked };
     }));
   };
@@ -292,10 +212,15 @@ const App: React.FC = () => {
     setModules(prev => prev.map(m => m.id === moduleId ? { ...m, isEnrolled: true } : m));
     setUser(prev => ({ ...prev, activeModuleId: moduleId }));
     const mod = modules.find(m => m.id === moduleId);
-    if (mod) {
-      setEnrollmentSuccessTitle(mod.title);
-      setTimeout(() => setEnrollmentSuccessTitle(null), 3500);
-    }
+    if (mod) { setEnrollmentSuccessTitle(mod.title); setTimeout(() => setEnrollmentSuccessTitle(null), 3500); }
+  };
+
+  const handleClaimBounty = (xp: number, credits: number, bountyId: string) => {
+    setUser(prev => {
+        const nextXp = prev.xp + xp;
+        const nextLevel = Math.floor(nextXp / 1000) + 1;
+        return { ...prev, xp: nextXp, credits: prev.credits + credits, level: nextLevel };
+    });
   };
 
   const handleCheckAnswer = () => {
@@ -314,15 +239,18 @@ const App: React.FC = () => {
         } else {
           const nextLessonsFinished = activeLearningModule.lessonsFinished + 1;
           const nextProgress = Math.floor((nextLessonsFinished / activeLearningModule.totalLessons) * 100);
-          setModules(prev => prev.map(m => m.id === activeLearningModule.id ? { ...m, lessonsFinished: nextLessonsFinished, progress: nextProgress } : m));
+          const updatedModules = modules.map(m => m.id === activeLearningModule.id ? { ...m, lessonsFinished: nextLessonsFinished, progress: nextProgress } : m);
+          setModules(updatedModules);
+          
           const earnedXp = Math.round(100 * xpMultiplier);
           const earnedCredits = 50 + creditBonus;
+          
           setUser(prev => {
             const nextXp = prev.xp + earnedXp;
             const nextLevel = Math.floor(nextXp / 1000) + 1;
-            const updated = { ...prev, xp: nextXp, level: nextLevel, credits: prev.credits + earnedCredits, lessonsFinished: prev.lessonsFinished + 1 };
-            checkAchievements(updated);
-            return updated;
+            const updatedUser = { ...prev, xp: nextXp, level: nextLevel, credits: prev.credits + earnedCredits, lessonsFinished: prev.lessonsFinished + 1 };
+            checkAchievements(updatedUser, updatedModules, nextLessonsFinished);
+            return updatedUser;
           });
           setLearningStep('result');
         }
@@ -341,13 +269,9 @@ const App: React.FC = () => {
 
   return (
     <div className={`h-screen w-screen bg-[#020617] text-slate-100 flex flex-col md:flex-row font-sans overflow-hidden transition-all duration-1000 ${focusMode ? 'grayscale-[0.6] brightness-[0.7] sepia-[0.1]' : ''} ${!isApiEnabled ? 'saturate-[0.8] contrast-[1.05]' : ''}`}>
-      {/* Background Layers */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         {wallpaper !== 'os-grid' && (
-          <div 
-            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 opacity-20"
-            style={{ backgroundImage: `url(${wallpaper})`, filter: focusMode ? 'blur(10px) brightness(0.5)' : 'none' }}
-          />
+          <div className="absolute inset-0 bg-cover bg-center transition-all duration-1000 opacity-20" style={{ backgroundImage: `url(${wallpaper})`, filter: focusMode ? 'blur(10px) brightness(0.5)' : 'none' }} />
         )}
         <div className={`absolute inset-0 os-grid neural-pulse-bg transition-opacity duration-1000 ${wallpaper === 'os-grid' ? 'opacity-20' : 'opacity-10'}`}></div>
       </div>
@@ -363,26 +287,7 @@ const App: React.FC = () => {
             return win.isOpen && (
               <Window key={win.id} {...win} isActive={activeApp === win.id} onClose={() => closeApp(win.id)} onFocus={() => { setMaxZ(z => z + 1); setWindows(w => ({ ...w, [win.id]: { ...w[win.id], zIndex: maxZ + 1 } })); setActiveApp(win.id); }} onMinimize={() => setWindows(w => ({ ...w, [win.id]: { ...w[win.id], isMinimized: true } }))} onMaximize={() => setWindows(w => ({ ...w, [win.id]: { ...w[win.id], isMaximized: !w[win.id].isMaximized } }))}>
                 {mod ? (
-                  <LearningEngineOverlay 
-                    module={mod} 
-                    milestone={dynamicMilestone}
-                    equippedBuffs={equippedItems}
-                    xpMultiplier={xpMultiplier}
-                    creditBonus={creditBonus}
-                    step={learningStep} 
-                    currentQuizIndex={currentQuizIndex}
-                    currentScore={lessonScore}
-                    onClose={() => closeApp(mod.id)}
-                    onNextStep={() => setLearningStep('quiz')}
-                    onQuizSelect={setQuizSelection}
-                    onCheckAnswer={handleCheckAnswer}
-                    onNextLesson={async () => await loadLessonContent(mod)}
-                    onResultClose={() => closeApp(mod.id)}
-                    onTriggerFallback={handleManualFallback}
-                    selectedAnswer={quizSelection}
-                    feedback={quizFeedback}
-                    isApiEnabled={isApiEnabled}
-                  />
+                  <LearningEngineOverlay module={mod} milestone={dynamicMilestone} equippedBuffs={equippedItems} xpMultiplier={xpMultiplier} creditBonus={creditBonus} step={learningStep} currentQuizIndex={currentQuizIndex} currentScore={lessonScore} onClose={() => closeApp(mod.id)} onNextStep={() => setLearningStep('quiz')} onQuizSelect={setQuizSelection} onCheckAnswer={handleCheckAnswer} onNextLesson={async () => await loadLessonContent(mod)} onResultClose={() => closeApp(mod.id)} onTriggerFallback={handleManualFallback} selectedAnswer={quizSelection} feedback={quizFeedback} isApiEnabled={isApiEnabled} />
                 ) : (
                   <>
                     {win.id === 'dashboard' && <Dashboard user={user} modules={modules} inventory={inventory} onLaunchQuest={openApp} onEnroll={handleEnroll} onMinimize={() => minimizeApp('dashboard')} isApiEnabled={isApiEnabled} />}
@@ -396,6 +301,7 @@ const App: React.FC = () => {
                     {win.id === 'calendar' && <Calendar />}
                     {win.id === 'armory' && <Armory user={user} inventory={inventory} onBuy={(id) => { const item = inventory.find(i => i.id === id); if(item && user.credits >= item.cost) { setInventory(p => p.map(i => i.id === id ? { ...i, isOwned: true } : i)); setUser(u => ({ ...u, credits: u.credits - item.cost })); } }} onEquip={(id) => setInventory(p => p.map(i => i.id === id ? { ...i, isEquipped: !i.isEquipped } : i))} />}
                     {win.id === 'trophy-room' && <Achievements achievements={achievements} />}
+                    {win.id === 'bounty-board' && <BountyBoard user={user} onClaim={handleClaimBounty} />}
                     {win.id === 'mindmap' && <MindMapper />}
                     {win.id === 'timer' && <FocusTimer />}
                     {win.id === 'calc' && <SmartCalc />}
@@ -433,17 +339,7 @@ const App: React.FC = () => {
           )}
         </main>
 
-        <Taskbar 
-          isApiEnabled={isApiEnabled} 
-          windows={(Object.values(windows) as WindowState[]).filter(w => w.isOpen)} 
-          activeApp={activeApp} 
-          onAppClick={openApp} 
-          onCloseApp={closeApp}
-          onMinimizeApp={minimizeApp}
-          onStartClick={() => setIsStartOpen(!isStartOpen)} 
-          onControlClick={() => openApp('control-panel')} 
-          onCalendarClick={() => openApp('calendar')} 
-        />
+        <Taskbar isApiEnabled={isApiEnabled} windows={(Object.values(windows) as WindowState[]).filter(w => w.isOpen)} activeApp={activeApp} onAppClick={openApp} onCloseApp={closeApp} onMinimizeApp={minimizeApp} onStartClick={() => setIsStartOpen(!isStartOpen)} onControlClick={() => openApp('control-panel')} onCalendarClick={() => openApp('calendar')} />
         {isStartOpen && <StartMenu installedAppIds={installedAppIds} onClose={() => setIsStartOpen(false)} onLaunch={openApp} />}
         <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} onLaunch={openApp} />
       </div>
@@ -451,168 +347,16 @@ const App: React.FC = () => {
   );
 };
 
-// @google/genai Coding Guidelines: This component handles the rendering of AI-generated content and assessment logic.
+// @google/genai Coding Guidelines Component
 interface LearningEngineOverlayProps {
-  module: LearningModule;
-  milestone: any;
-  equippedBuffs: InventoryItem[];
-  xpMultiplier: number;
-  creditBonus: number;
-  step: 'lesson' | 'loading' | 'quiz' | 'result' | 'error';
-  currentQuizIndex: number;
-  currentScore: number;
-  onClose: () => void;
-  onNextStep: () => void;
-  onQuizSelect: (val: string) => void;
-  onCheckAnswer: () => void;
-  onNextLesson: () => void;
-  onResultClose: () => void;
-  onTriggerFallback: () => void;
-  selectedAnswer: string | null;
-  feedback: 'correct' | 'incorrect' | null;
-  isApiEnabled: boolean;
+  module: LearningModule; milestone: any; equippedBuffs: InventoryItem[]; xpMultiplier: number; creditBonus: number; step: 'lesson' | 'loading' | 'quiz' | 'result' | 'error'; currentQuizIndex: number; currentScore: number; onClose: () => void; onNextStep: () => void; onQuizSelect: (val: string) => void; onCheckAnswer: () => void; onNextLesson: () => void; onResultClose: () => void; onTriggerFallback: () => void; selectedAnswer: string | null; feedback: 'correct' | 'incorrect' | null; isApiEnabled: boolean;
 }
-
-const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
-  module, milestone, equippedBuffs, xpMultiplier, creditBonus, step, currentQuizIndex, currentScore, 
-  onClose, onNextStep, onQuizSelect, onCheckAnswer, onNextLesson, onResultClose, onTriggerFallback,
-  selectedAnswer, feedback, isApiEnabled
-}) => {
-  if (step === 'loading') {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-12 space-y-8 bg-[#020617]/80 backdrop-blur-xl text-center">
-        <div className="relative">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div>
-          <i className="fas fa-brain absolute inset-0 flex items-center justify-center text-xl md:text-2xl text-blue-400 animate-pulse"></i>
-        </div>
-        <div className="text-center space-y-2">
-          <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter font-orbitron">Neural Synthesis</h3>
-          <p className="text-[8px] md:text-[10px] text-blue-400 font-black uppercase tracking-[0.4em] animate-pulse">Hydrating Knowledge Node {module.lessonsFinished + 1}/12</p>
-        </div>
-      </div>
-    );
-  }
-  if (step === 'error') {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-8 md:p-12 space-y-6 text-center">
-        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-600/10 flex items-center justify-center text-red-500 border border-red-500/20">
-          <i className="fas fa-triangle-exclamation text-2xl md:text-3xl"></i>
-        </div>
-        <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter font-orbitron">Synaptic Fragmentation</h3>
-        <div className="flex flex-col md:flex-row gap-3 md:gap-4 w-full md:w-auto">
-          <button onClick={onTriggerFallback} className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">Manual Link</button>
-          <button onClick={onClose} className="w-full md:w-auto px-8 py-3 bg-white/5 text-slate-500 font-black rounded-xl text-[10px] uppercase tracking-widest border border-white/5">Abort</button>
-        </div>
-      </div>
-    );
-  }
-  if (step === 'lesson') {
-    return (
-      <div className="h-full flex flex-col bg-[#020617]/60">
-        <div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar space-y-8 md:space-y-10 pb-32">
-          <header className="space-y-4">
-            <span className="px-3 py-1 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest">
-              Layer {module.lessonsFinished + 1} of 12
-            </span>
-            <h1 className="text-2xl md:text-5xl font-black text-white uppercase tracking-tighter font-orbitron leading-tight">
-              {milestone?.title || 'Knowledge Acquisition'}
-            </h1>
-          </header>
-          <section className="bg-white/5 border border-white/5 rounded-3xl p-6 md:p-8 space-y-6">
-            <h3 className="text-[9px] md:text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron flex items-center gap-3">
-              <i className="fas fa-bullseye"></i> Objectives
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {milestone?.objectives?.map((obj: string, i: number) => (
-                <div key={i} className="flex gap-4 p-4 rounded-2xl bg-slate-900/50 border border-white/5">
-                  <i className="fas fa-check-circle text-emerald-500 mt-1 shrink-0"></i>
-                  <p className="text-xs text-slate-300 font-medium leading-relaxed">{obj}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-          <div className="bg-slate-900/40 border border-white/5 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] text-slate-300 text-xs md:text-sm leading-relaxed whitespace-pre-wrap font-medium">
-            {milestone?.content}
-          </div>
-          <div className="bg-[#0f172a] border border-blue-500/20 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-6">
-             <h3 className="text-[9px] md:text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron">Deep Dive</h3>
-             <div className="text-slate-400 text-xs md:text-sm leading-relaxed italic whitespace-pre-wrap font-medium">
-                {milestone?.detailedNotes}
-             </div>
-          </div>
-        </div>
-        <div className="p-4 md:p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex flex-col md:flex-row justify-end gap-3 md:gap-4 sticky bottom-0">
-           <button onClick={onClose} className="w-full md:w-auto px-10 py-4 bg-white/5 text-slate-400 font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest border border-white/5">Abort</button>
-           <button onClick={onNextStep} className="w-full md:w-auto px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/30 transition-all font-orbitron">
-              Verify Mastery
-           </button>
-        </div>
-      </div>
-    );
-  }
-  if (step === 'quiz') {
-    const currentQuiz = milestone?.quizzes?.[currentQuizIndex];
-    if (!currentQuiz) return null;
-    return (
-      <div className="h-full flex flex-col bg-[#020617]/60">
-        <div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar space-y-8 md:space-y-12 flex flex-col items-center justify-center">
-          <div className="w-full max-w-2xl space-y-8 md:space-y-10">
-            <header className="text-center space-y-4">
-              <p className="text-[8px] md:text-[10px] font-black text-blue-400 uppercase tracking-[0.5em] font-orbitron">Layer Verification</p>
-              <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter font-orbitron leading-tight">
-                {currentQuiz.question}
-              </h2>
-            </header>
-            <div className="grid grid-cols-1 gap-3 md:gap-4">
-              {currentQuiz.options.map((opt: any) => (
-                <button
-                  key={opt.letter}
-                  onClick={() => onQuizSelect(opt.letter)}
-                  disabled={!!feedback}
-                  className={`
-                    w-full flex items-center gap-4 md:gap-6 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border transition-all text-left
-                    ${selectedAnswer === opt.letter 
-                      ? (feedback === 'correct' ? 'bg-emerald-600/20 border-emerald-500' : (feedback === 'incorrect' ? 'bg-red-600/20 border-red-500' : 'bg-blue-600 border-blue-500 text-white')) 
-                      : 'bg-slate-900/60 border-white/5 hover:border-white/20 text-slate-300'}
-                  `}
-                >
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center font-black font-orbitron shrink-0">{opt.letter}</div>
-                  <span className="text-xs md:text-sm font-bold">{opt.text}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="p-4 md:p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex justify-center">
-           <button onClick={onCheckAnswer} disabled={!selectedAnswer || !!feedback} className="w-full max-sm py-4 md:py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black rounded-[1.5rem] md:rounded-3xl text-xs uppercase tracking-widest font-orbitron">
-             Lock In Entry
-           </button>
-        </div>
-      </div>
-    );
-  }
-  if (step === 'result') {
-    const passed = currentScore >= 4;
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 bg-[#020617]/80 backdrop-blur-2xl">
-        <div className="w-full max-w-xl bg-slate-900/60 border border-white/10 rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-12 text-center space-y-8 md:space-y-10">
-          <div className={`w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] md:rounded-[2rem] mx-auto flex items-center justify-center text-3xl md:text-4xl ${passed ? 'bg-emerald-600' : 'bg-red-600'} text-white shadow-2xl`}>
-             <i className={`fas ${passed ? 'fa-medal' : 'fa-skull'}`}></i>
-          </div>
-          <div className="space-y-2">
-             <h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{passed ? 'Mastery Verified' : 'Rejection'}</h1>
-             <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">Score: {currentScore} / 5</p>
-          </div>
-          <div className="flex flex-col gap-3 md:gap-4">
-             <button onClick={onNextLesson} className={`w-full py-4 md:py-5 ${passed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'} text-white font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl font-orbitron`}>
-               {passed ? 'Advance Layer' : 'Retry Verification'}
-             </button>
-             <button onClick={onResultClose} className="text-[8px] md:text-[9px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest">Dashboard</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({ module, milestone, step, currentQuizIndex, currentScore, onClose, onNextStep, onQuizSelect, onCheckAnswer, onNextLesson, onResultClose, onTriggerFallback, selectedAnswer, feedback }) => {
+  if (step === 'loading') return <div className="h-full flex flex-col items-center justify-center p-12 space-y-8 bg-[#020617]/80 backdrop-blur-xl text-center"><div className="relative"><div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div><i className="fas fa-brain absolute inset-0 flex items-center justify-center text-xl md:text-2xl text-blue-400 animate-pulse"></i></div><div className="text-center space-y-2"><h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter font-orbitron">Neural Synthesis</h3><p className="text-[8px] md:text-[10px] text-blue-400 font-black uppercase tracking-[0.4em] animate-pulse">Hydrating Knowledge Node {module.lessonsFinished + 1}/12</p></div></div>;
+  if (step === 'error') return <div className="h-full flex flex-col items-center justify-center p-8 md:p-12 space-y-6 text-center"><div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-600/10 flex items-center justify-center text-red-500 border border-red-500/20"><i className="fas fa-triangle-exclamation text-2xl md:text-3xl"></i></div><h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tighter font-orbitron">Synaptic Fragmentation</h3><div className="flex flex-col md:flex-row gap-3 md:gap-4 w-full md:w-auto"><button onClick={onTriggerFallback} className="w-full md:w-auto px-8 py-3 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">Manual Link</button><button onClick={onClose} className="w-full md:w-auto px-8 py-3 bg-white/5 text-slate-500 font-black rounded-xl text-[10px] uppercase tracking-widest border border-white/5">Abort</button></div></div>;
+  if (step === 'lesson') return <div className="h-full flex flex-col bg-[#020617]/60"><div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar space-y-8 md:space-y-10 pb-32"><header className="space-y-4"><span className="px-3 py-1 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest">Layer {module.lessonsFinished + 1} of 12</span><h1 className="text-2xl md:text-5xl font-black text-white uppercase tracking-tighter font-orbitron leading-tight">{milestone?.title || 'Knowledge Acquisition'}</h1></header><section className="bg-white/5 border border-white/5 rounded-3xl p-6 md:p-8 space-y-6"><h3 className="text-[9px] md:text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron flex items-center gap-3"><i className="fas fa-bullseye"></i> Objectives</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4">{milestone?.objectives?.map((obj: string, i: number) => (<div key={i} className="flex gap-4 p-4 rounded-2xl bg-slate-900/50 border border-white/5"><i className="fas fa-check-circle text-emerald-500 mt-1 shrink-0"></i><p className="text-xs text-slate-300 font-medium leading-relaxed">{obj}</p></div>))}</div></section><div className="bg-slate-900/40 border border-white/5 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] text-slate-300 text-xs md:text-sm leading-relaxed whitespace-pre-wrap font-medium">{milestone?.content}</div><div className="bg-[#0f172a] border border-blue-500/20 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] space-y-6"><h3 className="text-[9px] md:text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] font-orbitron">Deep Dive</h3><div className="text-slate-400 text-xs md:text-sm leading-relaxed italic whitespace-pre-wrap font-medium">{milestone?.detailedNotes}</div></div></div><div className="p-4 md:p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex flex-col md:flex-row justify-end gap-3 md:gap-4 sticky bottom-0"><button onClick={onClose} className="w-full md:w-auto px-10 py-4 bg-white/5 text-slate-400 font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest border border-white/5">Abort</button><button onClick={onNextStep} className="w-full md:w-auto px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/30 transition-all font-orbitron">Verify Mastery</button></div></div>;
+  if (step === 'quiz') { const currentQuiz = milestone?.quizzes?.[currentQuizIndex]; if (!currentQuiz) return null; return <div className="h-full flex flex-col bg-[#020617]/60"><div className="flex-1 overflow-y-auto p-4 md:p-12 custom-scrollbar space-y-8 md:space-y-12 flex flex-col items-center justify-center"><div className="w-full max-w-2xl space-y-8 md:space-y-10"><header className="text-center space-y-4"><p className="text-[8px] md:text-[10px] font-black text-blue-400 uppercase tracking-[0.5em] font-orbitron">Layer Verification</p><h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter font-orbitron leading-tight">{currentQuiz.question}</h2></header><div className="grid grid-cols-1 gap-3 md:gap-4">{currentQuiz.options.map((opt: any) => (<button key={opt.letter} onClick={() => onQuizSelect(opt.letter)} disabled={!!feedback} className={`w-full flex items-center gap-4 md:gap-6 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border transition-all text-left ${selectedAnswer === opt.letter ? (feedback === 'correct' ? 'bg-emerald-600/20 border-emerald-500' : (feedback === 'incorrect' ? 'bg-red-600/20 border-red-500' : 'bg-blue-600 border-blue-500 text-white')) : 'bg-slate-900/60 border-white/5 hover:border-white/20 text-slate-300'}`}><div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white/5 flex items-center justify-center font-black font-orbitron shrink-0">{opt.letter}</div><span className="text-xs md:text-sm font-bold">{opt.text}</span></button>))}</div></div></div><div className="p-4 md:p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex justify-center"><button onClick={onCheckAnswer} disabled={!selectedAnswer || !!feedback} className="w-full max-sm py-4 md:py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black rounded-[1.5rem] md:rounded-3xl text-xs uppercase tracking-widest font-orbitron">Lock In Entry</button></div></div>; }
+  if (step === 'result') { const passed = currentScore >= 4; return <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 bg-[#020617]/80 backdrop-blur-2xl"><div className="w-full max-w-xl bg-slate-900/60 border border-white/10 rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-12 text-center space-y-8 md:space-y-10"><div className={`w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] md:rounded-[2rem] mx-auto flex items-center justify-center text-3xl md:text-4xl ${passed ? 'bg-emerald-600' : 'bg-red-600'} text-white shadow-2xl`}><i className={`fas ${passed ? 'fa-medal' : 'fa-skull'}`}></i></div><div className="space-y-2"><h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter font-orbitron">{passed ? 'Mastery Verified' : 'Rejection'}</h1><p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-widest">Score: {currentScore} / 5</p></div><div className="flex flex-col gap-3 md:gap-4"><button onClick={onNextLesson} className={`w-full py-4 md:py-5 ${passed ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'} text-white font-black rounded-2xl text-[9px] md:text-[10px] uppercase tracking-widest shadow-xl font-orbitron`}>{passed ? 'Advance Layer' : 'Retry Verification'}</button><button onClick={onResultClose} className="text-[8px] md:text-[9px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest">Dashboard</button></div></div></div>; }
   return null;
 };
 

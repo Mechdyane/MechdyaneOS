@@ -353,6 +353,7 @@ export const SOFTWARE_CATALOG: SoftwareApp[] = [
   
   { id: 'armory', name: 'Neural Armory', icon: 'fa-shield-halved', description: 'Spend credits on gear and system upgrades.', category: ModuleCategory.BEHAVIOR_GAMIFICATION, isSystem: true },
   { id: 'trophy-room', name: 'Trophy Room', icon: 'fa-trophy', description: 'View your achievements and milestones.', category: ModuleCategory.BEHAVIOR_GAMIFICATION, isSystem: true },
+  { id: 'bounty-board', name: 'Bounty Board', icon: 'fa-scroll', description: 'Accept specialized growth contracts.', category: ModuleCategory.BEHAVIOR_GAMIFICATION, isSystem: true },
 
   { id: 'calc', name: 'Smart Calc', icon: 'fa-calculator', description: 'Step-by-step math solver.', category: ModuleCategory.NATURAL_SCIENCES },
   { id: 'mindmap', name: 'Mind Mapper', icon: 'fa-brain', description: 'Visual concept mapping.', category: ModuleCategory.BEHAVIOR_GAMIFICATION },
