@@ -155,7 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* CORE STATS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           <div className="bg-[#0f172a]/60 p-8 rounded-[2rem] border border-white/5 shadow-xl space-y-4 hover:border-white/10 transition-colors group">
             <div className="flex justify-between items-start">
               <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500 border border-orange-500/10 shadow-lg group-hover:scale-110 transition-transform">
@@ -184,6 +184,19 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="bg-[#0f172a]/60 p-8 rounded-[2rem] border border-white/5 shadow-xl space-y-4 hover:border-white/10 transition-colors group">
             <div className="flex justify-between items-start">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 border border-amber-500/10 shadow-lg group-hover:scale-110 transition-transform">
+                  <i className="fas fa-coins text-base"></i>
+              </div>
+              <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Credits</p>
+            </div>
+            <div>
+                <p className="text-3xl font-black text-white font-orbitron">{user.credits.toLocaleString()}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-amber-500 mt-2">Neural Capital</p>
+            </div>
+          </div>
+
+          <div className="bg-[#0f172a]/60 p-8 rounded-[2rem] border border-white/5 shadow-xl space-y-4 hover:border-white/10 transition-colors group">
+            <div className="flex justify-between items-start">
               <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/10 shadow-lg group-hover:scale-110 transition-transform">
                   <i className="fas fa-star text-base"></i>
               </div>
@@ -195,7 +208,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          <div className="bg-[#0f172a]/60 p-8 rounded-[2rem] border border-white/5 shadow-xl space-y-4 hover:border-white/10 transition-colors group">
+          <div className="bg-[#0f172a]/60 p-8 rounded-[2rem] border border-white/5 shadow-xl space-y-4 hover:border-white/10 transition-colors group sm:col-span-2 md:col-span-1">
             <div className="flex justify-between items-start">
               <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 border border-purple-500/10 shadow-lg group-hover:scale-110 transition-transform">
                   <i className="fas fa-shield-halved text-base"></i>

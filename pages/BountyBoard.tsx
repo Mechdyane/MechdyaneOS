@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { UserState } from '../types';
+import React, { useState, useMemo } from 'react';
+import { UserState, LearningModule } from '../types';
 
 interface Bounty {
   id: string;
@@ -10,34 +10,38 @@ interface Bounty {
   objective: string;
   payout: { xp: number; credits: number };
   icon: string;
-  isClaimed: boolean;
-  status: 'Available' | 'Active' | 'Completed';
+  targetValue: number;
 }
 
 interface BountyBoardProps {
   user: UserState;
+  modules: LearningModule[];
+  claimedIds: string[];
   onClaim: (xp: number, credits: number, bountyId: string) => void;
+  isApiEnabled?: boolean;
 }
 
-const BountyBoard: React.FC<BountyBoardProps> = ({ user, onClaim }) => {
-  const [bounties, setBounties] = useState<Bounty[]>([
+const BountyBoard: React.FC<BountyBoardProps> = ({ user, modules, claimedIds, onClaim, isApiEnabled = true }) => {
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  const bounties: Bounty[] = [
     { 
-      id: 'b-1', title: 'Layer Synthesis', description: 'Push the limits of neural acquisition by completing three layers in a single session.', 
-      type: 'Daily', objective: 'Complete 3 Lesson Layers', payout: { xp: 300, credits: 150 }, icon: 'fa-microchip', isClaimed: false, status: 'Available' 
+      id: 'b-1', title: 'Layer Synthesis', description: 'Push the limits of neural acquisition by expanding your verified layer count.', 
+      type: 'Daily', objective: 'Verified Layers', payout: { xp: 300, credits: 150 }, icon: 'fa-microchip', targetValue: 3
     },
     { 
-      id: 'b-2', title: 'Cognitive Perfection', description: 'Verify mastery with absolute precision. No synaptic errors permitted.', 
-      type: 'Elite', objective: 'Achieve 100% Score on any Quiz', payout: { xp: 800, credits: 500 }, icon: 'fa-crosshairs', isClaimed: false, status: 'Available' 
+      id: 'b-2', title: 'Cognitive Perfection', description: 'Verify mastery with absolute precision across multiple knowledge nodes.', 
+      type: 'Elite', objective: 'Node Milestones', payout: { xp: 800, credits: 500 }, icon: 'fa-crosshairs', targetValue: 5
     },
     { 
-      id: 'b-3', title: 'Deep Concentration', description: 'Engage the focus protocol and maintain mental clarity for an extended duration.', 
-      type: 'Daily', objective: 'Complete 1 Focus Timer (25m)', payout: { xp: 200, credits: 100 }, icon: 'fa-clock', isClaimed: false, status: 'Available' 
+      id: 'b-3', title: 'Deep Concentration', description: 'Maintain a consistent neural link streak for high-density focus.', 
+      type: 'Daily', objective: 'Link Streak Days', payout: { xp: 200, credits: 100 }, icon: 'fa-fire', targetValue: 1
     },
     { 
-      id: 'b-4', title: 'The Polymath Contract', description: 'Demonstrate domain versatility across the entire Mechdyane ecosystem.', 
-      type: 'Legendary', objective: 'Start 3 different Node Categories', payout: { xp: 2500, credits: 1500 }, icon: 'fa-globe', isClaimed: false, status: 'Available' 
+      id: 'b-4', title: 'The Polymath Contract', description: 'Demonstrate domain versatility by initiating multiple distinct knowledge sectors.', 
+      type: 'Legendary', objective: 'Active Node Sectors', payout: { xp: 2500, credits: 1500 }, icon: 'fa-globe', targetValue: 3
     }
-  ]);
+  ];
 
   const typeColors = {
     Daily: 'text-blue-400 border-blue-400/20 bg-blue-400/5',
@@ -45,9 +49,25 @@ const BountyBoard: React.FC<BountyBoardProps> = ({ user, onClaim }) => {
     Legendary: 'text-amber-400 border-amber-400/20 bg-amber-400/5',
   };
 
+  const getBountyProgress = (b: Bounty) => {
+    switch (b.id) {
+      case 'b-1': return user.lessonsFinished;
+      case 'b-2': return user.lessonsFinished;
+      case 'b-3': return user.streak;
+      case 'b-4': return modules.filter(m => m.progress > 0).length;
+      default: return 0;
+    }
+  };
+
   const handleClaim = (b: Bounty) => {
-    onClaim(b.payout.xp, b.payout.credits, b.id);
-    setBounties(prev => prev.map(item => item.id === b.id ? { ...item, isClaimed: true, status: 'Completed' } : item));
+    const currentVal = getBountyProgress(b);
+    if (syncingId || claimedIds.includes(b.id) || currentVal < b.targetValue) return;
+    
+    setSyncingId(b.id);
+    setTimeout(() => {
+      onClaim(b.payout.xp, b.payout.credits, b.id);
+      setSyncingId(null);
+    }, isApiEnabled ? 1500 : 2500);
   };
 
   return (
@@ -55,117 +75,148 @@ const BountyBoard: React.FC<BountyBoardProps> = ({ user, onClaim }) => {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-12">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-             <span className="px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[8px] font-black uppercase tracking-widest animate-pulse">Live Feed</span>
+             <span className={`px-3 py-1 border rounded-full text-[8px] font-black uppercase tracking-widest font-orbitron ${isApiEnabled ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+               {isApiEnabled ? 'Neural Matrix' : 'Archive Matrix'}
+             </span>
              <h1 className="text-5xl font-black text-white uppercase tracking-tighter font-orbitron leading-none">Quest Matrix</h1>
           </div>
-          <p className="text-slate-500 font-medium text-lg max-w-2xl">High-priority growth contracts transmitted from the Mechdyane Core.</p>
-        </div>
-        
-        <div className="flex items-center gap-6">
-           <div className="text-right flex flex-col justify-center">
-             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mb-1 font-orbitron">Current Standing</p>
-             <p className="text-2xl font-black text-white font-orbitron leading-none">LV. {user.level}</p>
-           </div>
-           <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400">
-              <i className="fas fa-satellite-dish"></i>
-           </div>
+          <p className="text-slate-500 font-medium text-lg max-w-2xl">Execute growth contracts to synchronize rewards with your neural profile.</p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 gap-6">
-        {bounties.map(b => (
-          <div 
-            key={b.id} 
-            className={`relative p-8 md:p-10 rounded-[3rem] border transition-all duration-500 flex flex-col md:flex-row items-center gap-10 group overflow-hidden
-              ${b.isClaimed 
-                ? 'bg-emerald-950/20 border-emerald-500/20 opacity-60' 
-                : 'bg-slate-900/60 border-white/5 hover:border-blue-500/30 shadow-2xl hover:shadow-blue-500/10'
-              }
-            `}
-          >
-            {/* Rarity/Type Label */}
-            <div className={`absolute top-8 right-12 text-[9px] font-black uppercase tracking-[0.3em] font-orbitron 
-              ${typeColors[b.type as keyof typeof typeColors].split(' ')[0]}
-            `}>
-              {b.type} Contract
-            </div>
+        {bounties.map(b => {
+          const isSyncing = syncingId === b.id;
+          const isClaimed = claimedIds.includes(b.id);
+          const currentVal = getBountyProgress(b);
+          const isSatisfied = currentVal >= b.targetValue;
+          const progressPercent = Math.min(100, (currentVal / b.targetValue) * 100);
 
-            {/* Icon */}
-            <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center shrink-0 border-2 transition-all duration-700 relative z-10
-               ${b.isClaimed ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-white/5 border-white/10 text-white group-hover:scale-105 group-hover:rotate-3'}
-            `}>
-               <i className={`fas ${b.icon} text-4xl`}></i>
-               {!b.isClaimed && <div className="absolute inset-0 bg-current opacity-10 blur-xl"></div>}
-            </div>
+          return (
+            <div 
+              key={b.id} 
+              className={`relative p-8 md:p-10 rounded-[3rem] border transition-all duration-500 flex flex-col md:flex-row items-center gap-10 group overflow-hidden
+                ${isClaimed 
+                  ? 'bg-emerald-950/20 border-emerald-500/20 shadow-none' 
+                  : isSatisfied 
+                    ? 'bg-blue-900/10 border-blue-500/30 shadow-2xl hover:shadow-blue-500/10' 
+                    : 'bg-slate-900/60 border-white/5 hover:border-white/20'
+                }
+              `}
+            >
+              <div className={`absolute top-8 right-12 text-[9px] font-black uppercase tracking-[0.3em] font-orbitron 
+                ${typeColors[b.type as keyof typeof typeColors].split(' ')[0]}
+              `}>
+                {b.type} Contract
+              </div>
 
-            {/* Content */}
-            <div className="flex-1 space-y-3 text-center md:text-left">
-               <h3 className="text-2xl font-black text-white uppercase tracking-tight font-orbitron leading-tight">
-                 {b.title}
-               </h3>
-               <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-xl">
-                 {b.description}
-               </p>
-               <div className="pt-4 flex flex-wrap justify-center md:justify-start gap-4">
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/5">
-                     <i className="fas fa-bullseye text-blue-400 text-[10px]"></i>
-                     <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{b.objective}</span>
-                  </div>
-               </div>
-            </div>
+              <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center shrink-0 border-2 transition-all duration-700 relative z-10
+                 ${isClaimed ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : isSatisfied ? 'bg-blue-600/10 border-blue-500/40 text-blue-400 shadow-xl' : 'bg-white/5 border-white/10 text-white group-hover:scale-105 group-hover:rotate-3'}
+              `}>
+                 <i className={`fas ${b.icon} text-4xl`}></i>
+              </div>
 
-            {/* Payout & Action */}
-            <div className="md:w-64 w-full pt-8 md:pt-0 md:pl-10 md:border-l border-white/10 flex flex-col gap-6">
-               <div className="space-y-2">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center md:text-left">Payout Vectors</p>
-                  <div className="flex justify-center md:justify-start gap-4">
-                     <div className="text-center md:text-left">
-                        <p className="text-xl font-black text-blue-400 font-orbitron">+{b.payout.xp}</p>
-                        <p className="text-[7px] font-bold text-slate-600 uppercase tracking-widest">XP Sync</p>
-                     </div>
-                     <div className="text-center md:text-left">
-                        <p className="text-xl font-black text-amber-500 font-orbitron">+{b.payout.credits}</p>
-                        <p className="text-[7px] font-bold text-slate-600 uppercase tracking-widest">Credits</p>
-                     </div>
-                  </div>
-               </div>
-               
-               <button 
-                 disabled={b.isClaimed}
-                 onClick={() => handleClaim(b)}
-                 className={`w-full py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest transition-all font-orbitron shadow-xl flex items-center justify-center gap-3
-                   ${b.isClaimed 
-                     ? 'bg-emerald-600/20 text-emerald-400 cursor-default border border-emerald-500/20' 
-                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20 active:scale-95 group/btn'
-                   }
-                 `}
-               >
-                 {b.isClaimed ? (
-                   <>
-                     <i className="fas fa-check-circle"></i>
-                     Synced
-                   </>
-                 ) : (
-                   <>
-                     <i className="fas fa-bolt animate-pulse"></i>
-                     Neural Sync
-                   </>
-                 )}
-               </button>
-            </div>
+              <div className="flex-1 space-y-4 text-center md:text-left w-full">
+                 <div>
+                    <h3 className={`text-2xl font-black uppercase tracking-tight font-orbitron leading-tight ${isClaimed ? 'text-slate-500' : 'text-white'}`}>
+                      {b.title}
+                    </h3>
+                    <p className="text-sm text-slate-400 font-medium leading-relaxed max-w-xl mt-1">
+                      {b.description}
+                    </p>
+                 </div>
 
-            {/* Background Texture */}
-            <div className="absolute -bottom-10 -right-10 opacity-[0.02] pointer-events-none group-hover:opacity-[0.04] transition-opacity">
-               <i className={`fas ${b.icon} text-[200px]`}></i>
+                 <div className="pt-2 space-y-3 w-full max-w-xl">
+                    <div className="flex justify-between items-end">
+                       <div className="flex items-center gap-3">
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${isClaimed ? 'text-slate-600' : 'text-slate-400'}`}>
+                             {b.objective}: <span className={isSatisfied ? 'text-emerald-500' : 'text-blue-400'}>{currentVal} / {b.targetValue}</span>
+                          </span>
+                       </div>
+                       <span className={`text-[10px] font-black font-orbitron ${isSatisfied ? 'text-emerald-500' : 'text-blue-400'}`}>
+                          {Math.round(progressPercent)}%
+                       </span>
+                    </div>
+
+                    <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
+                       <div 
+                         className={`h-full transition-all duration-1000 ease-out relative ${
+                           isClaimed 
+                             ? 'bg-slate-700' 
+                             : isSatisfied 
+                               ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' 
+                               : 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                         }`} 
+                         style={{ width: `${progressPercent}%` }}
+                       >
+                          {!isClaimed && <div className="absolute inset-0 shimmer-effect opacity-30"></div>}
+                       </div>
+                    </div>
+
+                    {isSatisfied && !isClaimed && (
+                       <div className="flex items-center gap-2 animate-pulse">
+                          <i className="fas fa-check-circle text-emerald-500 text-[10px]"></i>
+                          <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Neural Link Requirements Validated</span>
+                       </div>
+                    )}
+                 </div>
+              </div>
+
+              <div className="md:w-72 w-full pt-8 md:pt-0 md:pl-10 md:border-l border-white/10 flex flex-col gap-8">
+                 <div className="flex flex-col gap-4">
+                    <button 
+                      onClick={() => handleClaim(b)}
+                      disabled={isClaimed || isSyncing || !isSatisfied}
+                      className={`relative w-full h-16 rounded-full border-2 transition-all duration-500 group/switch overflow-hidden flex items-center ${
+                        isClaimed 
+                          ? 'bg-emerald-600/10 border-emerald-500/40' 
+                          : !isSatisfied
+                            ? 'bg-slate-900 border-white/5 opacity-50 cursor-not-allowed'
+                            : isSyncing
+                              ? 'bg-blue-900/20 border-blue-500/30'
+                              : 'bg-slate-950 border-white/10 hover:border-blue-500/40'
+                      }`}
+                    >
+                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                          <span className={`text-[8px] font-black uppercase tracking-[0.4em] font-orbitron transition-all duration-700 ${
+                            isClaimed 
+                              ? 'text-emerald-500 opacity-100 -translate-x-6' 
+                              : isSyncing 
+                                ? 'text-blue-400 animate-pulse' 
+                                : !isSatisfied
+                                  ? 'text-slate-700 opacity-40'
+                                  : 'text-blue-400 opacity-100 translate-x-6'
+                          }`}>
+                            {isClaimed ? 'Verified' : isSyncing ? 'Syncing' : !isSatisfied ? 'Locked' : 'Ready'}
+                          </span>
+                       </div>
+
+                       <div className={`absolute top-1 bottom-1 w-14 rounded-full flex items-center justify-center transition-all duration-700 ease-in-out shadow-2xl z-10 ${
+                           isClaimed 
+                             ? 'right-1 left-auto bg-emerald-500' 
+                             : isSyncing
+                               ? 'left-1/2 -translate-x-1/2 bg-blue-500 animate-pulse'
+                               : !isSatisfied
+                                 ? 'left-1 bg-slate-900'
+                                 : 'left-1 bg-slate-800 border border-blue-500/40'
+                         }`}>
+                          {isClaimed ? (
+                            <i className="fas fa-check text-white text-sm"></i>
+                          ) : isSyncing ? (
+                            <i className="fas fa-circle-notch animate-spin text-white text-sm"></i>
+                          ) : !isSatisfied ? (
+                            <i className="fas fa-lock text-slate-700 text-sm"></i>
+                          ) : (
+                            <i className="fas fa-bolt text-blue-400 text-sm animate-bounce"></i>
+                          )}
+                       </div>
+                    </button>
+                 </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      
-      <footer className="pt-24 text-center opacity-20">
-         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[1em] font-orbitron leading-none mb-4">Contract Feed v4.2</p>
-         <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Bounties refresh in 14:22:09</p>
-      </footer>
     </div>
   );
 };

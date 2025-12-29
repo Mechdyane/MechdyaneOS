@@ -30,7 +30,6 @@ const Window: React.FC<WindowProps> = ({
   });
   const [scale, setScale] = useState(1);
   
-  // Refs for dragging and resizing state to keep handlers stable
   const isDragging = useRef(false);
   const resizeDir = useRef<string | null>(null);
   const startPointerPos = useRef({ x: 0, y: 0 });
@@ -68,7 +67,6 @@ const Window: React.FC<WindowProps> = ({
       isDragging.current = true;
       startPointerPos.current = { x: e.clientX, y: e.clientY };
       startWindowPos.current = { x: pos.x, y: pos.y };
-      // Prevent text selection while dragging
       document.body.style.userSelect = 'none';
     }
   };
@@ -140,38 +138,40 @@ const Window: React.FC<WindowProps> = ({
     };
   }, []);
 
-  const windowStyle: React.CSSProperties = (isMaximized || isMobile) 
-    ? {
-        width: '100vw',
-        height: 'calc(100vh - 56px)', 
-        left: 0,
-        top: 0,
-        borderRadius: 0,
-        zIndex: zIndex + 2000,
-        transform: `scale(${scale})`,
-        opacity: isMinimized ? 0 : 1,
-        pointerEvents: isMinimized ? 'none' : 'auto',
-        transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
-      }
-    : { 
-        width: `${size.width}px`, 
-        height: `${size.height}px`, 
-        left: `${pos.x}px`, 
-        top: `${pos.y}px`, 
-        zIndex,
-        borderRadius: '24px',
-        transform: `scale(${isMinimized ? 0.85 : scale})`,
-        opacity: isMinimized ? 0 : 1,
-        filter: isMinimized ? 'blur(20px) brightness(0.5)' : 'none',
-        pointerEvents: isMinimized ? 'none' : 'auto',
-        transition: isDragging.current || resizeDir.current ? 'none' : 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
-      };
+  const getWindowTransform = () => {
+    if (isMinimized) {
+      // Retract window to the bottom taskbar with a shrink effect
+      return `translate(${pos.x}px, 110vh) scale(0.1) rotateX(45deg)`;
+    }
+    if (isMaximized || isMobile) {
+      return `translate(0, 0) scale(${scale})`;
+    }
+    return `translate(${pos.x}px, ${pos.y}px) scale(${scale})`;
+  };
+
+  const windowStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: (isMaximized || isMobile) ? '100vw' : `${size.width}px`,
+    height: (isMaximized || isMobile) ? 'calc(100vh - 56px)' : `${size.height}px`,
+    zIndex: isActive ? zIndex + 5000 : zIndex,
+    borderRadius: (isMaximized || isMobile) ? '0' : '24px',
+    transform: getWindowTransform(),
+    transformOrigin: isMinimized ? 'center bottom' : 'center center',
+    opacity: isMinimized ? 0 : 1,
+    filter: isMinimized ? 'blur(40px)' : 'none',
+    pointerEvents: isMinimized ? 'none' : 'auto',
+    transition: (isDragging.current || resizeDir.current) 
+      ? 'none' 
+      : 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.1), opacity 0.4s ease, border-radius 0.3s ease',
+  };
 
   return (
     <div 
       ref={windowRef}
       onWheel={handleWheel}
-      className={`glass shadow-2xl absolute flex flex-col overflow-hidden animate-window-zoom border-white/10 select-none ${
+      className={`glass shadow-2xl absolute flex flex-col overflow-hidden select-none border-white/10 ${
         isActive ? 'ring-2 ring-blue-500/40' : ''
       } ${isMobile ? 'border-none' : 'border'}`}
       style={windowStyle}
@@ -226,10 +226,10 @@ const Window: React.FC<WindowProps> = ({
           <div className="flex items-center gap-1">
             {!isMobile && (
               <>
-                <button onClick={(e) => { e.stopPropagation(); onMinimize(); }} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/5 transition-all text-slate-400">
+                <button onClick={(e) => { e.stopPropagation(); onMinimize(); }} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/5 transition-all text-slate-400" title="Minimize">
                   <i className="fas fa-minus text-[10px]"></i>
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); onMaximize(); }} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/5 transition-all text-slate-400">
+                <button onClick={(e) => { e.stopPropagation(); onMaximize(); }} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/5 transition-all text-slate-400" title={isMaximized ? "Restore" : "Maximize"}>
                   <i className={`${isMaximized ? 'fas fa-compress' : 'far fa-square'} text-[10px]`}></i>
                 </button>
               </>
