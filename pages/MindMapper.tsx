@@ -26,6 +26,7 @@ const MindMapper: React.FC = () => {
 
   const [viewTransform, setViewTransform] = useState({ x: 0, y: 0, k: 1 });
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [linkingFromId, setLinkingFromId] = useState<string | null>(null);
@@ -34,6 +35,7 @@ const MindMapper: React.FC = () => {
   
   const containerRef = useRef<HTMLDivElement>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const panOffset = useRef({ x: 0, y: 0 });
   const editInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Focus effect for editing
@@ -49,6 +51,32 @@ const MindMapper: React.FC = () => {
     localStorage.setItem('mechdyane_mindmap_nodes', JSON.stringify(nodes));
     localStorage.setItem('mechdyane_mindmap_edges', JSON.stringify(edges));
   }, [nodes, edges]);
+
+  // Smooth Zooming with Wheel
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomSpeed = 0.001;
+    const delta = -e.deltaY;
+    const scaleFactor = Math.pow(1.1, delta / 100);
+    
+    setViewTransform(prev => {
+      const newK = Math.max(0.1, Math.min(5, prev.k * scaleFactor));
+      
+      // Calculate world coordinates before zoom
+      const worldX = (mouseX - prev.x) / prev.k;
+      const worldY = (mouseY - prev.y) / prev.k;
+      
+      // Calculate new x and y to keep mouse point fixed
+      const newX = mouseX - worldX * newK;
+      const newY = mouseY - worldY * newK;
+      
+      return { x: newX, y: newY, k: newK };
+    });
+  }, []);
 
   const fitToView = () => {
     if (!containerRef.current || nodes.length === 0) return;
@@ -81,15 +109,12 @@ const MindMapper: React.FC = () => {
 
   const autoLayout = () => {
     if (nodes.length === 0) return;
-
-    // 1. Build Adjacency List
     const adj: Record<string, string[]> = {};
     edges.forEach(edge => {
       if (!adj[edge.fromId]) adj[edge.fromId] = [];
       adj[edge.fromId].push(edge.toId);
     });
 
-    // 2. Determine Levels (Breadth First Search)
     const rootNode = nodes.find(n => n.id === 'root') || nodes[0];
     const levels: Record<string, number> = {};
     const visited = new Set<string>();
@@ -109,11 +134,7 @@ const MindMapper: React.FC = () => {
       });
     }
 
-    nodes.forEach(n => {
-      if (!visited.has(n.id)) {
-        levels[n.id] = 0;
-      }
-    });
+    nodes.forEach(n => { if (!visited.has(n.id)) levels[n.id] = 0; });
 
     const levelCounts: Record<number, number> = {};
     const levelIndices: Record<number, number> = {};
@@ -131,11 +152,9 @@ const MindMapper: React.FC = () => {
       const level = levels[node.id] || 0;
       const count = levelCounts[level] || 1;
       const index = levelIndices[level]++;
-      
       const rowWidth = (count - 1) * hSpace;
       const x = startX - (rowWidth / 2) + (index * hSpace);
       const y = startY + (level * vSpace);
-
       return { ...node, x, y };
     });
 
@@ -156,7 +175,14 @@ const MindMapper: React.FC = () => {
     setEditingNodeId(newNode.id);
   };
 
-  const handleCanvasClick = () => {
+  const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    if (e.button === 1 || (e.button === 0 && !linkMode)) {
+      setIsPanning(true);
+      panOffset.current = { x: e.clientX - viewTransform.x, y: e.clientY - viewTransform.y };
+    }
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent) => {
     setSelectedNodeId(null);
     setEditingNodeId(null);
   };
@@ -164,13 +190,8 @@ const MindMapper: React.FC = () => {
   const handleCanvasDoubleClick = (e: React.MouseEvent) => {
     if (!containerRef.current || linkMode) return;
     const rect = containerRef.current.getBoundingClientRect();
-    
-    const localX = e.clientX - rect.left;
-    const localY = e.clientY - rect.top;
-    
-    const worldX = (localX - viewTransform.x) / viewTransform.k;
-    const worldY = (localY - viewTransform.y) / viewTransform.k;
-
+    const worldX = (e.clientX - rect.left - viewTransform.x) / viewTransform.k;
+    const worldY = (e.clientY - rect.top - viewTransform.y) / viewTransform.k;
     createNodeAt(worldX, worldY);
   };
 
@@ -197,7 +218,7 @@ const MindMapper: React.FC = () => {
     setNodes(nodes.map(n => n.id === id ? { ...n, color: colorClass } : n));
   };
 
-  const handlePointerDown = (e: React.PointerEvent, id: string) => {
+  const handleNodePointerDown = (e: React.PointerEvent, id: string) => {
     e.stopPropagation();
     setSelectedNodeId(id);
     
@@ -225,35 +246,36 @@ const MindMapper: React.FC = () => {
   };
 
   const handlePointerMove = useCallback((e: PointerEvent) => {
-    if (!draggingNodeId || !containerRef.current) return;
-    
-    const x = (e.clientX - viewTransform.x) / viewTransform.k - dragOffset.current.x;
-    const y = (e.clientY - viewTransform.y) / viewTransform.k - dragOffset.current.y;
-
-    setNodes(prev => prev.map(n => 
-      n.id === draggingNodeId ? { ...n, x, y } : n
-    ));
-  }, [draggingNodeId, viewTransform]);
+    if (draggingNodeId) {
+      const x = (e.clientX - viewTransform.x) / viewTransform.k - dragOffset.current.x;
+      const y = (e.clientY - viewTransform.y) / viewTransform.k - dragOffset.current.y;
+      setNodes(prev => prev.map(n => n.id === draggingNodeId ? { ...n, x, y } : n));
+    } else if (isPanning) {
+      setViewTransform(prev => ({
+        ...prev,
+        x: e.clientX - panOffset.current.x,
+        y: e.clientY - panOffset.current.y
+      }));
+    }
+  }, [draggingNodeId, isPanning, viewTransform]);
 
   const handlePointerUp = useCallback(() => {
     setDraggingNodeId(null);
+    setIsPanning(false);
   }, []);
 
   useEffect(() => {
-    if (draggingNodeId) {
-      window.addEventListener('pointermove', handlePointerMove);
-      window.addEventListener('pointerup', handlePointerUp);
-    }
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [draggingNodeId, handlePointerMove, handlePointerUp]);
+  }, [handlePointerMove, handlePointerUp]);
 
   // Minimap Calculations
   const minimapData = useMemo(() => {
     if (nodes.length === 0) return { scale: 1, offsetX: 0, offsetY: 0, bounds: { minX: 0, minY: 0, maxX: 0, maxY: 0 } };
-    
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     nodes.forEach(n => {
       minX = Math.min(minX, n.x);
@@ -261,17 +283,13 @@ const MindMapper: React.FC = () => {
       maxX = Math.max(maxX, n.x + 160);
       maxY = Math.max(maxY, n.y + 80);
     });
-
-    const padding = 100;
+    const padding = 200;
     minX -= padding; minY -= padding;
     maxX += padding; maxY += padding;
-
     const width = maxX - minX;
     const height = maxY - minY;
-    
     const miniSize = 180;
     const scale = Math.min(miniSize / width, miniSize / height);
-
     return { scale, offsetX: -minX, offsetY: -minY, bounds: { minX, minY, maxX, maxY, width, height } };
   }, [nodes]);
 
@@ -280,26 +298,21 @@ const MindMapper: React.FC = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     const localX = e.clientX - rect.left;
     const localY = e.clientY - rect.top;
-
     const worldX = localX / minimapData.scale - minimapData.offsetX;
     const worldY = localY / minimapData.scale - minimapData.offsetY;
-
     const viewRect = containerRef.current.getBoundingClientRect();
     const newTx = (viewRect.width / 2) - viewTransform.k * worldX;
     const newTy = (viewRect.height / 2) - viewTransform.k * worldY;
-
     setViewTransform(prev => ({ ...prev, x: newTx, y: newTy }));
   };
 
   const viewportIndicator = useMemo(() => {
     if (!containerRef.current) return null;
     const rect = containerRef.current.getBoundingClientRect();
-    
     const worldX = -viewTransform.x / viewTransform.k;
     const worldY = -viewTransform.y / viewTransform.k;
     const worldW = rect.width / viewTransform.k;
     const worldH = rect.height / viewTransform.k;
-
     return {
       x: (worldX + minimapData.offsetX) * minimapData.scale,
       y: (worldY + minimapData.offsetY) * minimapData.scale,
@@ -375,14 +388,13 @@ const MindMapper: React.FC = () => {
       {/* Minimap Overlay */}
       {showMinimap && (
         <div 
-          className="absolute bottom-6 right-6 w-[200px] h-[200px] glass border border-white/20 rounded-2xl shadow-2xl z-50 overflow-hidden cursor-pointer group"
+          className="absolute bottom-6 right-6 w-[200px] h-[200px] glass border border-white/20 rounded-2xl shadow-2xl z-[60] overflow-hidden cursor-pointer group"
           onClick={handleMinimapClick}
         >
           <div className="absolute top-2 left-3 text-[7px] font-black text-blue-500 uppercase tracking-widest opacity-50 font-orbitron">
             Synaptic Overview
           </div>
           <div className="relative w-full h-full p-2">
-            {/* Viewport Indicator */}
             {viewportIndicator && (
               <div 
                 className="absolute border border-blue-500 bg-blue-500/10 pointer-events-none transition-all duration-300"
@@ -394,8 +406,6 @@ const MindMapper: React.FC = () => {
                 }}
               />
             )}
-            
-            {/* Scale-down nodes */}
             {nodes.map(node => (
               <div 
                 key={`mini-${node.id}`}
@@ -410,7 +420,6 @@ const MindMapper: React.FC = () => {
               />
             ))}
           </div>
-          {/* Legend */}
           <div className="absolute bottom-0 inset-x-0 h-6 bg-slate-900/40 backdrop-blur-sm border-t border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Click to Jump</span>
           </div>
@@ -420,20 +429,22 @@ const MindMapper: React.FC = () => {
       {/* Canvas Area */}
       <div 
         ref={containerRef} 
+        onWheel={handleWheel}
+        onPointerDown={handleCanvasPointerDown}
         onClick={handleCanvasClick}
         onDoubleClick={handleCanvasDoubleClick}
-        className="flex-1 relative cursor-crosshair overflow-hidden"
+        className={`flex-1 relative overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
       >
         <div 
           style={{ 
             transform: `translate(${viewTransform.x}px, ${viewTransform.y}px) scale(${viewTransform.k})`,
             transformOrigin: '0 0',
-            transition: draggingNodeId ? 'none' : 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)'
+            transition: (draggingNodeId || isPanning) ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
           }}
           className="absolute inset-0 pointer-events-none"
         >
-          {/* Connection Lines (SVG) */}
-          <svg className="absolute inset-0 w-[5000px] h-[5000px] pointer-events-none overflow-visible">
+          {/* Connection Lines */}
+          <svg className="absolute inset-0 w-[10000px] h-[10000px] pointer-events-none overflow-visible">
             <defs>
               <linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
@@ -444,19 +455,17 @@ const MindMapper: React.FC = () => {
               const from = nodes.find(n => n.id === edge.fromId);
               const to = nodes.find(n => n.id === edge.toId);
               if (!from || !to) return null;
-              
               const fx = from.x + 80;
               const fy = from.y + 35;
               const tx = to.x + 80;
               const ty = to.y + 35;
-
               return (
                 <line 
                   key={edge.id}
                   x1={fx} y1={fy} x2={tx} y2={ty}
                   stroke="url(#line-gradient)"
-                  strokeWidth="2"
-                  strokeDasharray="5,5"
+                  strokeWidth={2 / viewTransform.k}
+                  strokeDasharray={`${5 / viewTransform.k},${5 / viewTransform.k}`}
                   className="animate-[dash_20s_linear_infinite]"
                 />
               );
@@ -467,20 +476,18 @@ const MindMapper: React.FC = () => {
           {nodes.map(node => (
             <div
               key={node.id}
-              onPointerDown={(e) => handlePointerDown(e, node.id)}
-              onClick={(e) => e.stopPropagation()} // STOP PROPAGATION HERE: Prevents canvas click from clearing selection
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                setEditingNodeId(node.id);
-              }}
+              onPointerDown={(e) => handleNodePointerDown(e, node.id)}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => { e.stopPropagation(); setEditingNodeId(node.id); }}
               style={{ 
                 left: node.x, 
                 top: node.y,
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
+                scale: draggingNodeId === node.id ? 1.05 : 1
               }}
               className={`absolute w-40 glass border rounded-2xl p-4 cursor-grab active:cursor-grabbing transition-all group ${
-                draggingNodeId === node.id ? 'z-50 shadow-2xl shadow-blue-500/20 ring-2 ring-blue-500' : 'z-10 shadow-lg'
-              } ${selectedNodeId === node.id ? 'ring-2 ring-blue-500/50 border-blue-500/50' : 'border-white/10 hover:border-white/30'} ${linkingFromId === node.id ? 'ring-2 ring-amber-500 border-amber-500' : ''} ${linkMode ? 'hover:scale-105' : ''}`}
+                draggingNodeId === node.id ? 'z-50 shadow-2xl ring-2 ring-blue-500' : 'z-10 shadow-lg'
+              } ${selectedNodeId === node.id ? 'ring-2 ring-blue-500/50 border-blue-500/50' : 'border-white/10 hover:border-white/30'} ${linkingFromId === node.id ? 'ring-2 ring-amber-500 border-amber-500' : ''}`}
             >
               <div className="flex items-center gap-2 mb-2 pointer-events-none">
                 <div className={`w-2 h-2 rounded-full ${node.id === 'root' ? 'bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-slate-500'}`}></div>
@@ -503,22 +510,16 @@ const MindMapper: React.FC = () => {
                 </div>
               )}
 
-              {/* Color Swatch Panel */}
               {selectedNodeId === node.id && !editingNodeId && !linkMode && (
                 <div 
-                  className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 glass border border-white/20 rounded-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[60]"
+                  className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 glass border border-white/20 rounded-full shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[70]"
                   onPointerDown={(e) => e.stopPropagation()} 
-                  onClick={(e) => e.stopPropagation()} 
                 >
                   {MECH_COLORS.map(c => (
                     <button
                       key={c.name}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevents deselecting the node when choosing a color
-                        updateNodeColor(node.id, c.class);
-                      }}
-                      className={`w-5 h-5 rounded-full border border-white/20 transition-all hover:scale-125 hover:shadow-lg ${c.bg} ${node.color === c.class ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110 shadow-blue-500/50' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); updateNodeColor(node.id, c.class); }}
+                      className={`w-6 h-6 rounded-full border border-white/20 transition-all hover:scale-125 hover:shadow-lg ${c.bg} ${node.color === c.class ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110 shadow-blue-500/50' : ''}`}
                       title={c.name}
                     />
                   ))}
@@ -538,7 +539,7 @@ const MindMapper: React.FC = () => {
         </div>
 
         {linkMode && (
-          <div className="absolute bottom-6 right-6 p-4 glass border border-amber-500/30 rounded-2xl animate-in slide-in-from-right duration-300">
+          <div className="absolute bottom-6 right-6 p-4 glass border border-amber-500/30 rounded-2xl animate-in slide-in-from-right duration-300 z-50">
              <div className="flex items-center gap-3">
                <i className="fas fa-bolt text-amber-500 animate-pulse"></i>
                <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
@@ -548,22 +549,18 @@ const MindMapper: React.FC = () => {
           </div>
         )}
 
-        <div className="absolute bottom-6 left-6 flex flex-col gap-2">
-          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest pointer-events-none bg-[#020617]/40 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/5">
-            Double-click canvas to spawn node
+        <div className="absolute bottom-6 left-6 flex flex-col gap-2 z-50">
+          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest pointer-events-none bg-[#020617]/60 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/5">
+            Scroll to Zoom • Drag background to Pan
           </div>
-          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest pointer-events-none bg-[#020617]/40 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/5">
-            Double-click node to edit text
+          <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest pointer-events-none bg-[#020617]/60 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/5">
+            Double-click canvas to spawn node
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes dash {
-          to {
-            stroke-dashoffset: -1000;
-          }
-        }
+        @keyframes dash { to { stroke-dashoffset: -1000; } }
       `}</style>
     </div>
   );

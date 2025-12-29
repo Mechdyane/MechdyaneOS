@@ -7,6 +7,7 @@ interface TaskbarProps {
   activeApp: AppId | null;
   onAppClick: (id: AppId) => void;
   onCloseApp: (id: AppId) => void;
+  onMinimizeApp: (id: AppId) => void;
   onStartClick: () => void;
   onControlClick: () => void;
   onCalendarClick: () => void;
@@ -18,6 +19,7 @@ const Taskbar: React.FC<TaskbarProps> = ({
   activeApp, 
   onAppClick, 
   onCloseApp,
+  onMinimizeApp,
   onStartClick, 
   onControlClick, 
   onCalendarClick, 
@@ -30,7 +32,6 @@ const Taskbar: React.FC<TaskbarProps> = ({
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
-    // Simulate slight fluctuations in system metrics
     const metricsTimer = setInterval(() => {
         setSimulatedPing(prev => Math.max(12, Math.min(120, prev + (Math.random() > 0.5 ? 2 : -2))));
         setNeuralLoad(prev => Math.max(5, Math.min(45, prev + (Math.random() > 0.5 ? 1 : -1))));
@@ -50,10 +51,8 @@ const Taskbar: React.FC<TaskbarProps> = ({
 
   return (
     <div className="h-14 glass border-t border-white/10 flex items-center px-4 z-[9999] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] relative">
-      {/* Visual Bottom Accent */}
       <div className={`absolute bottom-0 left-0 h-[2px] transition-all duration-1000 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)] w-full' : 'bg-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.8)] w-1/3'}`}></div>
 
-      {/* Start Button */}
       <button 
         onClick={handleStartClick}
         className={`w-11 h-11 flex items-center justify-center rounded-xl text-white shadow-lg active:scale-90 hover:brightness-110 transition-all duration-200 overflow-hidden relative group ${isApiEnabled ? 'bg-blue-600' : 'bg-amber-600'}`}
@@ -65,7 +64,6 @@ const Taskbar: React.FC<TaskbarProps> = ({
       
       <div className="mx-4 h-8 w-px bg-white/10"></div>
       
-      {/* Running Apps Area */}
       <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1">
         {windows.map(win => {
           const isActive = activeApp === win.id;
@@ -73,12 +71,20 @@ const Taskbar: React.FC<TaskbarProps> = ({
             <div key={win.id} className="relative group/item shrink-0">
               <button
                 onClick={() => onAppClick(win.id)}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  // Minimize if the app is active, providing the requested "Double Click to Minimize" behavior
+                  if (isActive) {
+                    onMinimizeApp(win.id);
+                  }
+                }}
                 className={`
                   relative flex items-center gap-3 pl-4 pr-12 h-11 rounded-xl transition-all duration-500 group active:scale-95
                   ${isActive 
                     ? 'bg-white/10 border border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] ring-1 ring-white/10' 
                     : 'hover:bg-white/5 border border-transparent'}
                 `}
+                title={isActive ? "Double-click to Minimize" : `Switch to ${win.title}`}
               >
                 <i className={`
                   fas ${win.icon} transition-all duration-500
@@ -94,14 +100,12 @@ const Taskbar: React.FC<TaskbarProps> = ({
                   {win.title}
                 </span>
 
-                {/* Active Indicator Line */}
                 <div className={`
                   absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 rounded-full transition-all duration-700
                   ${isActive ? `w-6 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
                 `}></div>
               </button>
 
-              {/* Quick Close Button */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -121,12 +125,8 @@ const Taskbar: React.FC<TaskbarProps> = ({
         })}
       </div>
 
-      {/* System Status Cluster */}
       <div className="flex items-center gap-6 ml-4">
-        
-        {/* System Health Area */}
         <div className="hidden lg:flex items-center gap-5 border-r border-white/5 pr-6">
-           {/* Neural Load */}
            <div className="flex flex-col gap-1 items-end min-w-[60px]">
               <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none">Neural Load</p>
               <div className="flex items-center gap-2">
@@ -140,7 +140,6 @@ const Taskbar: React.FC<TaskbarProps> = ({
               </div>
            </div>
 
-           {/* Ping/Latency */}
            <div className="flex flex-col gap-1 items-end">
               <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none">Latency</p>
               <div className="flex items-center gap-1.5">
@@ -150,7 +149,6 @@ const Taskbar: React.FC<TaskbarProps> = ({
            </div>
         </div>
 
-        {/* Global Controls Group */}
         <div className="flex items-center gap-3">
           <button 
             onClick={onControlClick}
@@ -162,7 +160,6 @@ const Taskbar: React.FC<TaskbarProps> = ({
             <i className="fas fa-sliders-h text-xs"></i>
           </button>
 
-          {/* Time & Portal */}
           <button 
             onClick={onCalendarClick}
             className={`flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all border border-white/5 active:scale-95
