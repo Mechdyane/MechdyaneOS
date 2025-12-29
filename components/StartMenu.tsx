@@ -24,6 +24,11 @@ const StartMenu: React.FC<StartMenuProps> = ({ installedAppIds, onClose, onLaunc
     [allInstalledApps, searchQuery]
   );
 
+  const handleRecClick = (appId: AppId) => {
+    onLaunch(appId);
+    onClose();
+  };
+
   return (
     <div 
       className="absolute bottom-14 left-1/2 -translate-x-1/2 w-[calc(100vw-24px)] md:w-[500px] glass rounded-3xl border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.8)] z-[10000] animate-mech-start animate-glow-cycle max-h-[80vh] flex flex-col"
@@ -75,7 +80,6 @@ const StartMenu: React.FC<StartMenuProps> = ({ installedAppIds, onClose, onLaunc
               <button
                 key={app.id}
                 onClick={() => onLaunch(app.id)}
-                data-tooltip={app.name}
                 className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-white/5 active:scale-90 transition-all group"
               >
                 <div className="w-11 h-11 rounded-2xl bg-slate-900/80 flex items-center justify-center border border-white/5 group-hover:scale-105 transition-transform">
@@ -93,21 +97,25 @@ const StartMenu: React.FC<StartMenuProps> = ({ installedAppIds, onClose, onLaunc
 
         {searchQuery === '' && (
           <div className="mt-8 border-t border-white/5 pt-5">
-            <h2 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3 px-1">Recommendations</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <h2 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 px-1 opacity-60">Recommendations</h2>
+            <div className="grid grid-cols-1 gap-2">
               {[
-                { title: 'Neural Pathways', time: '5m ago', icon: 'fa-brain' },
-                { title: 'Strategic Comms', time: '2h ago', icon: 'fa-comment' }
+                { title: 'Neural Pathways', time: '5M AGO', icon: 'fa-brain', id: 'neural-stream' },
+                { title: 'Strategic Comms', time: '2H AGO', icon: 'fa-comment', id: 'assistant' }
               ].map((rec, i) => (
-                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 cursor-pointer group transition-all">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/10 shrink-0">
-                    <i className={`fas ${rec.icon} text-sm text-blue-400`}></i>
+                <button 
+                  key={i} 
+                  onClick={() => handleRecClick(rec.id)}
+                  className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 hover:bg-blue-600/10 border border-white/5 hover:border-blue-500/30 group transition-all text-left w-full active:scale-[0.98]"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/10 group-hover:border-blue-500/30 shrink-0 transition-all group-hover:scale-105 shadow-sm">
+                    <i className={`fas ${rec.icon} text-base text-blue-400`}></i>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-bold text-slate-200 group-hover:text-blue-400 transition-colors uppercase tracking-tight truncate">{rec.title}</p>
-                    <p className="text-[7px] text-slate-500 font-black uppercase tracking-widest leading-none mt-0.5">{rec.time}</p>
+                    <p className="text-[11px] font-black text-white group-hover:text-blue-400 transition-colors uppercase tracking-tight truncate leading-tight">{rec.title}</p>
+                    <p className="text-[7px] text-slate-500 font-black uppercase tracking-widest leading-none mt-1 group-hover:text-slate-400">{rec.time}</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>

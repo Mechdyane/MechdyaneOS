@@ -96,6 +96,12 @@ const App: React.FC = () => {
     return hasCyberLens ? 5 : 0;
   }, [equippedItems]);
 
+  // Determine if Immersion mode should be active (hide sidebar)
+  const isAnyWindowMaximized = useMemo(() => {
+    // Fixed: Explicitly cast Object.values(windows) to WindowState[] to fix property access on 'unknown' error
+    return (Object.values(windows) as WindowState[]).some(w => w.isOpen && w.isMaximized && !w.isMinimized);
+  }, [windows]);
+
   useEffect(() => {
     localStorage.setItem('mechdyane_user', JSON.stringify(user));
   }, [user]);
@@ -121,36 +127,25 @@ const App: React.FC = () => {
     localStorage.setItem('mechdyane_pulse', String(synapticPulse));
   }, [synapticPulse]);
 
-  // Update global CSS variables for animations
   useEffect(() => {
     const effectivePulse = isApiEnabled ? synapticPulse : synapticPulse * 0.2;
     document.documentElement.style.setProperty('--pulse-speed', effectivePulse.toString());
   }, [isApiEnabled, synapticPulse]);
 
-  /**
-   * SMART YIELD LOGIC:
-   * Dashboard auto-minimizes when other windows are active to clear the workspace.
-   * Dashboard auto-restores when all other windows are closed or minimized.
-   */
   useEffect(() => {
-    // FIX: Cast Object.values(windows) to WindowState[] to ensure property access works on filtered elements
     const windowList = Object.values(windows) as WindowState[];
     const dash = windows['dashboard'];
-    
-    // Count other active (visible) windows
-    const otherVisibleWindowsCount = windowList.filter(
-      w => w.id !== 'dashboard' && w.isOpen && !w.isMinimized
-    ).length;
+    const anyOtherMaximized = windowList.some(w => w.id !== 'dashboard' && w.isOpen && !w.isMinimized && w.isMaximized);
+    const otherVisibleWindowsCount = windowList.filter(w => w.id !== 'dashboard' && w.isOpen && !w.isMinimized).length;
 
     if (dash && dash.isOpen) {
-      if (otherVisibleWindowsCount > 0 && !dash.isMinimized && activeApp !== 'dashboard') {
-        // Auto-Yield: Minimize dashboard if something else is being used
+      if ((anyOtherMaximized || otherVisibleWindowsCount > 0) && !dash.isMinimized && activeApp !== 'dashboard') {
         setWindows(prev => ({
           ...prev,
           dashboard: { ...prev.dashboard, isMinimized: true }
         }));
-      } else if (otherVisibleWindowsCount === 0 && dash.isMinimized) {
-        // Auto-Restore: Bring dashboard back if screen is clear
+      } 
+      else if (!anyOtherMaximized && otherVisibleWindowsCount === 0 && dash.isMinimized) {
         setWindows(prev => ({
           ...prev,
           dashboard: { ...prev.dashboard, isMinimized: false, zIndex: maxZ + 1 }
@@ -159,7 +154,7 @@ const App: React.FC = () => {
         setActiveApp('dashboard');
       }
     }
-  }, [windows, activeApp]); // Run whenever window states or focus changes
+  }, [windows, activeApp, maxZ]); 
 
   const loadLessonContent = async (mod: LearningModule) => {
     setCurrentQuizIndex(0);
@@ -279,20 +274,16 @@ const App: React.FC = () => {
   const checkAchievements = (updatedUser: UserState) => {
     setAchievements(prev => prev.map(ach => {
       if (ach.isUnlocked) return ach;
-      
       let progress = ach.progress;
       let isUnlocked = false;
-
       if (ach.id === 'steady-flow') progress = updatedUser.streak;
       if (ach.id === 'polymath') progress = modules.filter(m => m.progress >= 100).length;
       if (ach.id === 'deep-dive') progress = updatedUser.lessonsFinished >= 1 ? 1 : 0;
-
       if (progress >= ach.target) {
         isUnlocked = true;
         setNewBadge(ach);
         setTimeout(() => setNewBadge(null), 5000);
       }
-
       return { ...ach, progress, isUnlocked };
     }));
   };
@@ -324,10 +315,8 @@ const App: React.FC = () => {
           const nextLessonsFinished = activeLearningModule.lessonsFinished + 1;
           const nextProgress = Math.floor((nextLessonsFinished / activeLearningModule.totalLessons) * 100);
           setModules(prev => prev.map(m => m.id === activeLearningModule.id ? { ...m, lessonsFinished: nextLessonsFinished, progress: nextProgress } : m));
-          
           const earnedXp = Math.round(100 * xpMultiplier);
           const earnedCredits = 50 + creditBonus;
-
           setUser(prev => {
             const nextXp = prev.xp + earnedXp;
             const nextLevel = Math.floor(nextXp / 1000) + 1;
@@ -363,9 +352,9 @@ const App: React.FC = () => {
         <div className={`absolute inset-0 os-grid neural-pulse-bg transition-opacity duration-1000 ${wallpaper === 'os-grid' ? 'opacity-20' : 'opacity-10'}`}></div>
       </div>
 
-      <Sidebar onLaunch={openApp} user={user} activeApp={activeApp} />
+      <Sidebar onLaunch={openApp} user={user} activeApp={activeApp} isHidden={isAnyWindowMaximized} />
 
-      <div className="flex-1 flex flex-col relative h-full overflow-hidden w-full">
+      <div className={`flex-1 flex flex-col relative h-full transition-all duration-700 ${isAnyWindowMaximized ? 'w-screen' : 'w-full'}`}>
         <main className="relative flex-1 z-10 p-2 md:p-6 h-[calc(100vh-56px)] overflow-hidden">
           <Desktop installedAppIds={installedAppIds} onIconClick={(id) => openApp(id)} />
           
@@ -396,7 +385,7 @@ const App: React.FC = () => {
                   />
                 ) : (
                   <>
-                    {win.id === 'dashboard' && <Dashboard user={user} modules={modules} inventory={inventory} onLaunchQuest={openApp} onEnroll={handleEnroll} isApiEnabled={isApiEnabled} />}
+                    {win.id === 'dashboard' && <Dashboard user={user} modules={modules} inventory={inventory} onLaunchQuest={openApp} onEnroll={handleEnroll} onMinimize={() => minimizeApp('dashboard')} isApiEnabled={isApiEnabled} />}
                     {win.id === 'profile' && <Profile user={user} modules={modules} achievements={achievements} inventory={inventory} onUpdateUser={(u) => setUser(p => ({ ...p, ...u }))} />}
                     {win.id === 'settings' && <Settings wallpaper={wallpaper} setWallpaper={setWallpaper} focusMode={focusMode} setFocusMode={setFocusMode} pulseSpeed={synapticPulse} setPulseSpeed={setSynapticPulse} />}
                     {win.id === 'assistant' && <Assistant isApiEnabled={isApiEnabled} />}
@@ -503,7 +492,6 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
       </div>
     );
   }
-
   if (step === 'error') {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8 md:p-12 space-y-6 text-center">
@@ -518,7 +506,6 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
       </div>
     );
   }
-
   if (step === 'lesson') {
     return (
       <div className="h-full flex flex-col bg-[#020617]/60">
@@ -563,7 +550,6 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
       </div>
     );
   }
-
   if (step === 'quiz') {
     const currentQuiz = milestone?.quizzes?.[currentQuizIndex];
     if (!currentQuiz) return null;
@@ -598,14 +584,13 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
           </div>
         </div>
         <div className="p-4 md:p-8 bg-slate-900/80 backdrop-blur-xl border-t border-white/10 flex justify-center">
-           <button onClick={onCheckAnswer} disabled={!selectedAnswer || !!feedback} className="w-full max-w-sm py-4 md:py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black rounded-[1.5rem] md:rounded-3xl text-xs uppercase tracking-widest font-orbitron">
+           <button onClick={onCheckAnswer} disabled={!selectedAnswer || !!feedback} className="w-full max-sm py-4 md:py-5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black rounded-[1.5rem] md:rounded-3xl text-xs uppercase tracking-widest font-orbitron">
              Lock In Entry
            </button>
         </div>
       </div>
     );
   }
-
   if (step === 'result') {
     const passed = currentScore >= 4;
     return (
@@ -631,5 +616,4 @@ const LearningEngineOverlay: React.FC<LearningEngineOverlayProps> = ({
   return null;
 };
 
-/* Added default export to fix "module has no default export" error in index.tsx */
 export default App;

@@ -68,24 +68,27 @@ const Taskbar: React.FC<TaskbarProps> = ({
         {windows.map(win => {
           const isActive = activeApp === win.id;
           return (
-            <div key={win.id} className="relative group/item shrink-0">
+            <div key={win.id} className={`relative group/item shrink-0 transition-all duration-300 ${isActive ? 'z-50' : 'z-10'}`}>
               <button
                 onClick={() => onAppClick(win.id)}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
                   if (isActive) onMinimizeApp(win.id);
                 }}
+                style={{ 
+                  transform: isActive ? 'translateY(-6px) scale(1.05)' : 'none' 
+                }}
                 className={`
                   relative flex items-center gap-3 px-3 md:pl-4 md:pr-12 h-10 md:h-11 rounded-xl transition-all duration-500 group active:scale-95
                   ${isActive 
-                    ? 'bg-white/10 border border-white/10 ring-1 ring-white/10' 
+                    ? `bg-white/15 border border-white/20 ring-1 ring-white/20 ${isApiEnabled ? 'shadow-[0_10px_20px_rgba(59,130,246,0.3)]' : 'shadow-[0_10px_20px_rgba(245,158,11,0.3)]'}` 
                     : 'hover:bg-white/5 border border-transparent'}
                 `}
               >
                 <i className={`
                   fas ${win.icon} transition-all duration-500
                   ${isActive 
-                    ? (isApiEnabled ? 'text-blue-400 drop-shadow-[0_0_12px_rgba(96,165,250,0.8)] scale-110' : 'text-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.8)] scale-110') 
+                    ? (isApiEnabled ? 'text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,1)] scale-110' : 'text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,1)] scale-110') 
                     : 'text-slate-500 group-hover:text-slate-300'}
                 `}></i>
                 
@@ -98,7 +101,7 @@ const Taskbar: React.FC<TaskbarProps> = ({
 
                 <div className={`
                   absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 rounded-full transition-all duration-700
-                  ${isActive ? `w-4 md:w-6 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
+                  ${isActive ? `w-4 md:w-8 ${isApiEnabled ? 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,1)]' : 'bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,1)]'}` : 'w-0 bg-transparent'}
                 `}></div>
               </button>
 
@@ -108,7 +111,7 @@ const Taskbar: React.FC<TaskbarProps> = ({
                   e.stopPropagation();
                   onCloseApp(win.id);
                 }}
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-10 shadow-lg border border-white/20 hover:scale-110"
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600/90 text-white flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity z-[100] shadow-lg border border-white/20 hover:scale-110"
                 title={`Close ${win.title}`}
               >
                 <i className="fas fa-times text-[7px]"></i>

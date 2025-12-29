@@ -6,9 +6,10 @@ interface SidebarProps {
   onLaunch: (id: AppId) => void;
   user: UserState;
   activeApp: AppId | null;
+  isHidden?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onLaunch, user, activeApp }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onLaunch, user, activeApp, isHidden = false }) => {
   const navItems = [
     { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
     { id: 'appmanager', icon: 'fa-cubes', label: 'Ecosystem' },
@@ -19,7 +20,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onLaunch, user, activeApp }) => {
   ];
 
   return (
-    <aside className="hidden md:flex w-64 glass h-screen sticky top-0 flex-col items-center py-6 border-r border-white/5 transition-all z-[10001] shrink-0">
+    <aside 
+      className={`
+        hidden md:flex w-64 glass h-screen sticky top-0 flex-col items-center py-6 border-r border-white/5 z-[10001] shrink-0 transition-all duration-700 ease-in-out
+        ${isHidden ? '-ml-64 opacity-0 pointer-events-none' : 'ml-0 opacity-100'}
+      `}
+    >
       <div className="flex items-center gap-3 mb-10 px-4 cursor-pointer" onClick={() => onLaunch('os-helper')}>
         <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center glow-blue shadow-lg shadow-blue-500/20">
           <i className="fas fa-microchip text-xl text-white"></i>

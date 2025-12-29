@@ -10,6 +10,7 @@ interface DashboardProps {
   onLaunchQuest: (id: string) => void;
   onEnroll: (id: string) => void;
   onRestartQuest?: (id: string) => void;
+  onMinimize?: () => void;
   isApiEnabled?: boolean;
 }
 
@@ -30,7 +31,9 @@ const CATEGORY_ICONS: Record<string, string> = {
   [ModuleCategory.UTILITY]: 'fa-gear'
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ user, modules, inventory, onLaunchQuest, onEnroll, onRestartQuest, isApiEnabled = true }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  user, modules, inventory, onLaunchQuest, onEnroll, onRestartQuest, onMinimize, isApiEnabled = true 
+}) => {
   const [recommendation, setRecommendation] = useState<string>("Initializing Neural Suggester...");
   const [isSyncingRec, setIsSyncingRec] = useState(false);
   const [activeFilter, setActiveFilter] = useState<ModuleCategory | 'ALL'>('ALL');
@@ -66,7 +69,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, modules, inventory, onLaunc
     const fetchRec = async () => {
       setIsSyncingRec(true);
       if (!isApiEnabled) {
-        // Fallback for static mode
         setTimeout(() => {
           setRecommendation("Archive link detected. Recommending core focus on foundational [Computer Studies: Office Suite] to maintain link stability.");
           setIsSyncingRec(false);
@@ -114,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, modules, inventory, onLaunc
     <div className="p-6 md:p-12 space-y-10 animate-in fade-in duration-700 h-full overflow-y-auto bg-[#020617]/40 custom-scrollbar pb-32">
       
       {/* HEADER SECTION */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative group/header">
         <div className="flex items-center gap-6">
           <div className="w-16 h-16 rounded-full border-2 border-blue-500/20 p-1">
              <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden flex items-center justify-center border border-white/5 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
@@ -133,6 +135,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, modules, inventory, onLaunc
               Neural Link: <span className={isApiEnabled ? "text-emerald-500" : "text-amber-600 animate-pulse"}>{isApiEnabled ? 'Stable' : 'Restricted (Static)'}</span> • Sync Rate: {suggestedModule ? 'Optimized' : 'Scanning'}
             </p>
           </div>
+        </div>
+
+        <div className="flex gap-3">
+          {onMinimize && (
+            <button 
+              onClick={onMinimize}
+              className="px-6 py-3 bg-white/5 hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 border border-white/5 hover:border-blue-500/30 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 active:scale-95 group shadow-2xl"
+              title="Yield Terminal to Clear Workspace"
+            >
+              <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-blue-600/40 transition-colors">
+                <i className="fas fa-down-left-and-up-right-to-center text-[10px] group-hover:scale-110 transition-transform"></i>
+              </div>
+              Yield Node
+            </button>
+          )}
         </div>
       </header>
 
